@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head><title>Teste Imagem OpenRouter</title></head>
+<body style="font-family:sans-serif; padding:20px; background:#1a1a2e; color:white;">
+  <h2>Teste: Gerar imagem de gato via OpenRouter + Gemini</h2>
+  <button id="btn" style="padding:12px 24px; font-size:16px; cursor:pointer; background:#6366f1; color:white; border:none; border-radius:8px;">Gerar Imagem</button>
+  <div id="status" style="margin:16px 0; color:#a5b4fc;"></div>
+  <div id="result"></div>
+  <script>
+    document.getElementById('btn').addEventListener('click', async () => {
+      const status = document.getElementById('status');
+      const result = document.getElementById('result');
+      status.textContent = 'A gerar imagem... (pode demorar 10-30s)';
+      result.innerHTML = '';
+
+      try {
+        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer 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',
+            'X-Title': 'PlanAI Test',
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-3.1-flash-image-preview',
+            messages: [{ role: 'user', content: 'Generate an image of a cute cat sitting on a pillow. Just generate the image, do not describe it.' }],
+            modalities: ['image', 'text'],
+            max_tokens: 1024,
+          }),
+        });
+
+        const data = await res.json();
+        status.textContent = 'Resposta recebida! HTTP ' + res.status;
+
+        // Show raw response structure
+        const msg = data.choices?.[0]?.message || {};
+        const debug = document.createElement('pre');
+        debug.style.cssText = 'background:#0f0f23; padding:12px; border-radius:8px; overflow:auto; max-height:200px; font-size:12px;';
+        debug.textContent = 'MSG KEYS: ' + JSON.stringify(Object.keys(msg)) + '\n';
+
+        if (msg.images && msg.images.length > 0) {
+          debug.textContent += 'IMAGES: ' + msg.images.length + ' encontrada(s)\n';
+          const img = document.createElement('img');
+          img.src = msg.images[0];
+          img.style.cssText = 'max-width:512px; border-radius:12px; margin-top:12px; border:2px solid #6366f1;';
+          result.appendChild(img);
+          status.textContent = 'Imagem gerada com sucesso!';
+        } else if (Array.isArray(msg.content)) {
+          debug.textContent += 'CONTENT ARRAY types: ' + msg.content.map(p => p.type).join(', ') + '\n';
+          for (const part of msg.content) {
+            if (part.type === 'image_url' && part.image_url?.url) {
+              const img = document.createElement('img');
+              img.src = part.image_url.url;
+              img.style.cssText = 'max-width:512px; border-radius:12px; margin-top:12px;';
+              result.appendChild(img);
+              status.textContent = 'Imagem gerada (image_url)!';
+            }
+          }
+        } else if (typeof msg.content === 'string') {
+          debug.textContent += 'CONTENT string length: ' + msg.content.length + '\n';
+          debug.textContent += 'Has base64: ' + msg.content.includes('base64') + '\n';
+          debug.textContent += 'First 300: ' + msg.content.substring(0, 300) + '\n';
+          const b64 = msg.content.match(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/);
+          if (b64) {
+            const img = document.createElement('img');
+            img.src = b64[0];
+            img.style.cssText = 'max-width:512px; border-radius:12px; margin-top:12px;';
+            result.appendChild(img);
+            status.textContent = 'Imagem gerada (base64 no content)!';
+          }
+        }
+
+        if (data.error) {
+          debug.textContent += 'ERROR: ' + JSON.stringify(data.error) + '\n';
+          status.textContent = 'Erro: ' + (data.error.message || JSON.stringify(data.error));
+        }
+
+        result.prepend(debug);
+      } catch (err) {
+        status.textContent = 'Erro: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
