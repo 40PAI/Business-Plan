@@ -1,0 +1,88 @@
+export type StepType =
+  | "single-select"
+  | "multi-select"
+  | "text-input"
+  | "numeric-fields"
+  | "dual-select";
+
+export interface SelectOption {
+  label: string;
+  icon?: string;
+  conditionalFields?: { label: string; placeholder: string }[];
+}
+
+export interface NumericField {
+  key: string;
+  label: string;
+  placeholder: string;
+}
+
+export interface DualSelectGroup {
+  title: string;
+  description: string;
+  options: SelectOption[];
+}
+
+export interface Step {
+  id: number;
+  block: string;
+  blockIndex: number;
+  title: string;
+  description: string;
+  type: StepType;
+  options?: SelectOption[];
+  maxSelect?: number;
+  numericFields?: NumericField[];
+  subSelect?: {
+    label: string;
+    options: SelectOption[];
+    maxSelect: number;
+  };
+  dualGroups?: DualSelectGroup[];
+  hasAiGenerate?: boolean;
+  placeholder?: string;
+}
+
+export type StepAnswer =
+  | string
+  | string[]
+  | {
+      selected: string;
+      conditionalValues?: Record<string, string>;
+    }
+  | {
+      numericValues: Record<string, string>;
+      currency: string;
+      channels: string[];
+    }
+  | {
+      dualA: string;
+      dualB: string;
+    }
+  | {
+      textValue: string;
+      aiGenerated?: string[];
+      selectedName?: string;
+    };
+
+export interface ArtifactState {
+  status: "pending" | "generating" | "done" | "error";
+  content?: string;
+  urls?: string[];
+  error?: string;
+}
+
+export interface Project {
+  id: string;
+  createdAt: string;
+  businessName: string;
+  businessArea: string;
+  businessPhase: string;
+  businessGoal: string;
+  answers: Record<number, StepAnswer>;
+  artifacts: {
+    plan: ArtifactState;
+    logo: ArtifactState;
+    pitch: ArtifactState;
+  };
+}
