@@ -3,7 +3,8 @@ export type StepType =
   | "multi-select"
   | "text-input"
   | "numeric-fields"
-  | "dual-select";
+  | "dual-select"
+  | "contact-input";
 
 export interface SelectOption {
   label: string;
@@ -63,6 +64,11 @@ export type StepAnswer =
       textValue: string;
       aiGenerated?: string[];
       selectedName?: string;
+    }
+  | {
+      countryCode: string;
+      whatsapp: string;
+      email: string;
     };
 
 export interface ArtifactState {
@@ -72,6 +78,12 @@ export interface ArtifactState {
   error?: string;
 }
 
+export interface ProjectContact {
+  countryCode: string;
+  whatsapp: string;
+  email: string;
+}
+
 export interface Project {
   id: string;
   createdAt: string;
@@ -79,10 +91,12 @@ export interface Project {
   businessArea: string;
   businessPhase: string;
   businessGoal: string;
+  contact?: ProjectContact;
   answers: Record<number, StepAnswer>;
   artifacts: {
     plan: ArtifactState;
     logo: ArtifactState;
     pitch: ArtifactState;
   };
+  webhookSent?: boolean;
 }

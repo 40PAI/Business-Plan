@@ -16,6 +16,7 @@ import { ConditionalFields } from "@/components/wizard/conditional-fields";
 import { NumericInput } from "@/components/wizard/numeric-input";
 import { DualSelect } from "@/components/wizard/dual-select";
 import { NameGenerator } from "@/components/wizard/name-generator";
+import { ContactInput } from "@/components/wizard/contact-input";
 import { StepProgress } from "@/components/wizard/step-progress";
 
 function getDefaultAnswer(stepIndex: number): StepAnswer {
@@ -33,6 +34,8 @@ function getDefaultAnswer(stepIndex: number): StepAnswer {
       return { textValue: "", aiGenerated: [], selectedName: undefined };
     case "dual-select":
       return { dualA: "", dualB: "" };
+    case "contact-input":
+      return { countryCode: "+244", whatsapp: "", email: "" };
     default:
       return "";
   }
@@ -65,6 +68,12 @@ function isStepValid(stepIndex: number, answer: StepAnswer): boolean {
     case "dual-select": {
       const a = answer as { dualA: string; dualB: string };
       return !!a.dualA && !!a.dualB;
+    }
+    case "contact-input": {
+      const a = answer as { countryCode: string; whatsapp: string; email: string };
+      const hasWhatsapp = a.whatsapp.length >= 6;
+      const hasEmail = a.email.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a.email);
+      return hasWhatsapp || hasEmail;
     }
     default:
       return false;
@@ -180,6 +189,13 @@ export default function PlanWizard() {
 
   const handleGenerate = () => {
     const projectId = nanoid(10);
+
+    // Extract contact info from step 14
+    const contactAnswer = answers[14] as { countryCode: string; whatsapp: string; email: string } | undefined;
+    const contact = contactAnswer
+      ? { countryCode: contactAnswer.countryCode, whatsapp: contactAnswer.whatsapp, email: contactAnswer.email }
+      : undefined;
+
     const project: Project = {
       id: projectId,
       createdAt: new Date().toISOString(),
@@ -187,6 +203,7 @@ export default function PlanWizard() {
       businessArea: extractBusinessArea(answers),
       businessPhase: extractBusinessPhase(answers),
       businessGoal: extractBusinessGoal(answers),
+      contact,
       answers,
       artifacts: {
         plan: { status: "pending" },
@@ -347,6 +364,19 @@ export default function PlanWizard() {
             <DualSelect
               groups={step.dualGroups}
               value={currentAnswer as { dualA: string; dualB: string }}
+              onChange={(val) => updateAnswer(step.id, val)}
+            />
+          )}
+
+          {step.type === "contact-input" && (
+            <ContactInput
+              value={
+                currentAnswer as {
+                  countryCode: string;
+                  whatsapp: string;
+                  email: string;
+                }
+              }
               onChange={(val) => updateAnswer(step.id, val)}
             />
           )}

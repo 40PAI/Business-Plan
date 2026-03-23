@@ -157,13 +157,48 @@ export default function ProjectPage() {
     }
   }, [updateProject]);
 
+  const sendWebhook = useCallback(async (proj: Project) => {
+    if (proj.webhookSent) return;
+    try {
+      const payload = {
+        projectId: proj.id,
+        createdAt: proj.createdAt,
+        businessName: proj.businessName,
+        businessArea: proj.businessArea,
+        businessPhase: proj.businessPhase,
+        businessGoal: proj.businessGoal,
+        contact: proj.contact || null,
+        plan: proj.artifacts.plan.content || null,
+        logoUrl: proj.artifacts.logo.urls?.[0] || null,
+        pitch: proj.artifacts.pitch.content || null,
+      };
+
+      await fetch(
+        "https://automacoes.plenuz.co.ao/webhook/b09ca47f-521e-411b-86d4-f97909a8cf17",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      proj.webhookSent = true;
+      updateProject(proj);
+    } catch (err) {
+      console.error("Webhook error:", err);
+    }
+  }, [updateProject]);
+
   const generateAll = useCallback(async (proj: Project) => {
     await Promise.all([
       generatePlan(proj),
       generateLogo(proj),
       generatePitch(proj),
     ]);
-  }, [generatePlan, generateLogo, generatePitch]);
+
+    // Send webhook after all artifacts are generated
+    sendWebhook(proj);
+  }, [generatePlan, generateLogo, generatePitch, sendWebhook]);
 
   useGSAP(
     () => {

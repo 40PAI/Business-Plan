@@ -6,6 +6,7 @@ export const BLOCKS = [
   { name: "Modelo", steps: [6, 7] },
   { name: "Contexto", steps: [8, 9, 10, 11] },
   { name: "Marca", steps: [12, 13] },
+  { name: "Contacto", steps: [14] },
 ];
 
 export const STEPS: Step[] = [
@@ -325,5 +326,16 @@ export const STEPS: Step[] = [
         ],
       },
     ],
+  },
+
+  // BLOCO 6 — CONTACTO
+  {
+    id: 14,
+    block: "Contacto",
+    blockIndex: 5,
+    title: "Contacto",
+    description:
+      "Deixe o seu contacto para receber o plano de negócio, logo e pitch deck. Preencha pelo menos um.",
+    type: "contact-input",
   },
 ];
