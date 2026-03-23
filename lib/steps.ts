@@ -187,7 +187,7 @@ export const STEPS: Step[] = [
     blockIndex: 2,
     title: "Números Base",
     description:
-      "Estas 3 informações permitem calcular o break-even e as projecções financeiras.",
+      "Estas informações ajudam a calcular as projecções financeiras do teu plano.",
     type: "numeric-fields",
     numericFields: [
       {
@@ -196,13 +196,8 @@ export const STEPS: Step[] = [
         placeholder: "Ex: 15.000",
       },
       {
-        key: "fixedCosts",
-        label: "Custos fixos mensais estimados",
-        placeholder: "Ex: 200.000",
-      },
-      {
         key: "investment",
-        label: "Investimento disponível para arrancar",
+        label: "Quanto podes investir para começar?",
         placeholder: "Ex: 500.000",
       },
     ],

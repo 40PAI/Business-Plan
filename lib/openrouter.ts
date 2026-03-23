@@ -6,7 +6,7 @@ async function makeOpenRouterRequest(body: Record<string, unknown>) {
   if (!apiKey) throw new Error("OPENROUTER_API_KEY não configurada");
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 90000);
+  const timeout = setTimeout(() => controller.abort(), 180000);
 
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -178,7 +178,7 @@ export async function streamOpenRouter(
       model: OPENROUTER_MODEL,
       messages,
       stream: true,
-      max_tokens: 8000,
+      max_tokens: 16000,
       temperature: 0.7,
     });
 
@@ -193,7 +193,7 @@ export async function streamOpenRouter(
       model: "llama-3.3-70b-versatile",
       messages,
       stream: true,
-      max_tokens: 8000,
+      max_tokens: 16000,
       temperature: 0.7,
     });
     return createSSEStream(response);

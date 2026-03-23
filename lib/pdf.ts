@@ -58,10 +58,82 @@ export function generatePlanPDF(businessName: string, markdownContent: string) {
 
   let y = 50;
   const lines = markdownContent.split("\n");
+  let i = 0;
 
-  for (const line of lines) {
+  while (i < lines.length) {
+    const line = lines[i];
+
     if (line.trim() === "") {
       y += 3;
+      i++;
+      continue;
+    }
+
+    // Markdown table detection
+    if (line.trim().startsWith("|")) {
+      const tableLines: string[] = [];
+      while (i < lines.length && lines[i].trim().startsWith("|")) {
+        tableLines.push(lines[i]);
+        i++;
+      }
+
+      if (tableLines.length >= 2) {
+        const parseRow = (row: string) =>
+          row.split("|").slice(1, -1).map((c) => cleanBold(c.trim()));
+
+        const headers = parseRow(tableLines[0]);
+        const bodyRows = tableLines
+          .slice(2)
+          .filter((r) => !r.match(/^\|[\s\-:|]+\|$/))
+          .map(parseRow);
+
+        const colCount = headers.length;
+        const colW = CONTENT_W / colCount;
+        const rowH = 7;
+        const headerH = 8;
+
+        // Check if table fits, otherwise new page
+        const tableH = headerH + bodyRows.length * rowH + 4;
+        y = ensureSpace(doc, y, Math.min(tableH, 50));
+        y += 4;
+
+        // Header row background
+        doc.setFillColor(...COLOR_DARK);
+        doc.roundedRect(MARGIN, y - 5, CONTENT_W, headerH, 1, 1, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.setTextColor(255, 255, 255);
+        for (let c = 0; c < colCount; c++) {
+          const cellText = doc.splitTextToSize(headers[c], colW - 4);
+          doc.text(cellText[0] || "", MARGIN + c * colW + 2, y);
+        }
+        y += headerH;
+
+        // Body rows
+        for (let r = 0; r < bodyRows.length; r++) {
+          y = ensureSpace(doc, y, rowH);
+          // Alternating row bg
+          if (r % 2 === 0) {
+            doc.setFillColor(...COLOR_LIGHT_BG);
+            doc.rect(MARGIN, y - 4.5, CONTENT_W, rowH, "F");
+          }
+          // Row border
+          doc.setDrawColor(220, 225, 230);
+          doc.setLineWidth(0.15);
+          doc.line(MARGIN, y + rowH - 4.5, MARGIN + CONTENT_W, y + rowH - 4.5);
+
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(8);
+          doc.setTextColor(...COLOR_MID);
+          const row = bodyRows[r];
+          for (let c = 0; c < colCount; c++) {
+            const cellText = doc.splitTextToSize(row[c] || "", colW - 4);
+            doc.text(cellText[0] || "", MARGIN + c * colW + 2, y);
+          }
+          y += rowH;
+        }
+        y += 4;
+      }
       continue;
     }
 
@@ -76,6 +148,7 @@ export function generatePlanPDF(businessName: string, markdownContent: string) {
       doc.setTextColor(...COLOR_DARK);
       doc.text(line.slice(2), MARGIN, y + 2);
       y += 14;
+      i++;
       continue;
     }
 
@@ -87,11 +160,11 @@ export function generatePlanPDF(businessName: string, markdownContent: string) {
       doc.setFontSize(13);
       doc.setTextColor(...COLOR_ACCENT);
       doc.text(line.slice(3), MARGIN, y);
-      // underline
       doc.setDrawColor(...COLOR_ACCENT);
       doc.setLineWidth(0.3);
       doc.line(MARGIN, y + 2, MARGIN + doc.getTextWidth(line.slice(3)), y + 2);
       y += 8;
+      i++;
       continue;
     }
 
@@ -104,6 +177,20 @@ export function generatePlanPDF(businessName: string, markdownContent: string) {
       doc.setTextColor(...COLOR_DARK);
       doc.text(line.slice(4), MARGIN, y);
       y += 7;
+      i++;
+      continue;
+    }
+
+    // H4
+    if (line.startsWith("#### ")) {
+      y = ensureSpace(doc, y, 12);
+      y += 3;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...COLOR_DARK);
+      doc.text(line.slice(5), MARGIN, y);
+      y += 6;
+      i++;
       continue;
     }
 
@@ -115,7 +202,6 @@ export function generatePlanPDF(businessName: string, markdownContent: string) {
       doc.setFontSize(10);
       doc.setTextColor(...COLOR_MID);
 
-      // Bullet dot
       doc.setFillColor(...COLOR_ACCENT);
       doc.circle(MARGIN + 2, y - 1, 1, "F");
 
@@ -126,6 +212,30 @@ export function generatePlanPDF(businessName: string, markdownContent: string) {
         y += 5;
       }
       y += 1;
+      i++;
+      continue;
+    }
+
+    // Indented bullet (sub-item)
+    if (line.match(/^\s{2,}-\s/) || line.match(/^\s{2,}\*\s/)) {
+      const text = cleanBold(line.replace(/^\s+[-*]\s/, ""));
+      y = ensureSpace(doc, y, 7);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...COLOR_MID);
+
+      doc.setDrawColor(...COLOR_ACCENT);
+      doc.setLineWidth(0.3);
+      doc.line(MARGIN + 8, y - 1.5, MARGIN + 10, y - 1.5);
+
+      const wrapped = doc.splitTextToSize(text, CONTENT_W - 18);
+      for (const wLine of wrapped) {
+        y = ensureSpace(doc, y, 5);
+        doc.text(wLine, MARGIN + 14, y);
+        y += 5;
+      }
+      y += 1;
+      i++;
       continue;
     }
 
@@ -147,6 +257,7 @@ export function generatePlanPDF(businessName: string, markdownContent: string) {
         y += 5;
       }
       y += 1;
+      i++;
       continue;
     }
 
@@ -162,6 +273,7 @@ export function generatePlanPDF(businessName: string, markdownContent: string) {
       y += 5;
     }
     y += 1;
+    i++;
   }
 
   // Add page numbers

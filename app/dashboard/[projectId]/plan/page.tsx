@@ -42,13 +42,68 @@ export default function PlanViewer() {
 
   if (!project) return null;
 
-  // Simple markdown-to-HTML renderer for headings, bold, lists
+  // Markdown renderer with table support
   const renderMarkdown = (md: string) => {
     const lines = md.split("\n");
     const elements: React.ReactNode[] = [];
+    let i = 0;
 
-    for (let i = 0; i < lines.length; i++) {
+    while (i < lines.length) {
       const line = lines[i];
+
+      // Detect markdown table (line starts with |)
+      if (line.trim().startsWith("|")) {
+        const tableLines: string[] = [];
+        while (i < lines.length && lines[i].trim().startsWith("|")) {
+          tableLines.push(lines[i]);
+          i++;
+        }
+
+        if (tableLines.length >= 2) {
+          const parseRow = (row: string) =>
+            row.split("|").slice(1, -1).map((c) => c.trim());
+
+          const headers = parseRow(tableLines[0]);
+          const bodyRows = tableLines
+            .slice(2)
+            .filter((r) => !r.match(/^\|[\s-:|]+\|$/))
+            .map(parseRow);
+
+          elements.push(
+            <div key={`table-${i}`} className="my-6 overflow-x-auto rounded-xl border border-border/60">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-secondary/40 border-b border-border/60">
+                    {headers.map((h, hi) => (
+                      <th
+                        key={hi}
+                        className="px-4 py-3 text-left font-semibold text-foreground text-xs uppercase tracking-wider"
+                      >
+                        {renderInline(h)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {bodyRows.map((row, ri) => (
+                    <tr
+                      key={ri}
+                      className={`border-b border-border/30 ${ri % 2 === 0 ? "bg-background" : "bg-secondary/10"}`}
+                    >
+                      {row.map((cell, ci) => (
+                        <td key={ci} className="px-4 py-3 text-foreground/80">
+                          {renderInline(cell)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        }
+        continue;
+      }
 
       if (line.startsWith("# ")) {
         elements.push(
@@ -105,6 +160,7 @@ export default function PlanViewer() {
           </p>
         );
       }
+      i++;
     }
 
     return elements;
@@ -134,7 +190,7 @@ export default function PlanViewer() {
         <rect width="100%" height="100%" filter="url(#noiseFilter)" />
       </svg>
 
-      <main className="relative z-10 max-w-3xl mx-auto px-6 md:px-8 py-12">
+      <main className="relative z-10 max-w-4xl mx-auto px-6 md:px-8 py-12">
         {/* Header */}
         <div className="flex items-center justify-between mb-10">
           <Link

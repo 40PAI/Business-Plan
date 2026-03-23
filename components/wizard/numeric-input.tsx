@@ -50,7 +50,7 @@ export function NumericInput({ fields, subSelect, value, onChange }: NumericInpu
     <div className="space-y-6">
       {/* Currency selector */}
       <div className="flex gap-2">
-        {["Kz", "USD"].map((cur) => (
+        {["Kz", "USD", "EUR"].map((cur) => (
           <button
             key={cur}
             type="button"
