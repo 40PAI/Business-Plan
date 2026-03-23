@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { callOpenRouter } from "@/lib/openrouter";
 import { buildNamesSystemPrompt, buildNamesUserPrompt } from "@/lib/prompts";
 
+export const runtime = "edge";
+
 export async function POST(req: NextRequest) {
   try {
     const { answers } = await req.json();

@@ -12,8 +12,9 @@ export default function LogoViewer() {
   const router = useRouter();
   const projectId = params.projectId as string;
   const [project, setProject] = useState<Project | null>(null);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     const p = getProject(projectId);
@@ -27,6 +28,8 @@ export default function LogoViewer() {
   const handleRegenerate = async () => {
     if (!project) return;
     setIsRegenerating(true);
+    setImgLoaded(false);
+    setImgError(false);
 
     try {
       const res = await fetch("/api/generate/logo", {
@@ -45,7 +48,7 @@ export default function LogoViewer() {
       saveProject(project);
       setProject({ ...project });
     } catch {
-      // Keep existing logos
+      // Keep existing logo
     } finally {
       setIsRegenerating(false);
     }
@@ -53,7 +56,7 @@ export default function LogoViewer() {
 
   if (!project) return null;
 
-  const urls = project.artifacts.logo.urls || [];
+  const logoUrl = project.artifacts.logo.urls?.[0];
 
   return (
     <div className="relative min-h-screen bg-background text-foreground selection:bg-accent selection:text-white">
@@ -64,7 +67,7 @@ export default function LogoViewer() {
         <rect width="100%" height="100%" filter="url(#noiseFilter)" />
       </svg>
 
-      <main className="relative z-10 max-w-4xl mx-auto px-6 md:px-8 py-12">
+      <main className="relative z-10 max-w-3xl mx-auto px-6 md:px-8 py-12">
         {/* Header */}
         <div className="flex items-center justify-between mb-10">
           <Link
@@ -98,45 +101,59 @@ export default function LogoViewer() {
           </h1>
         </div>
 
-        {/* Logo grid */}
-        <div className="grid grid-cols-2 gap-6">
-          {urls.map((url, i) => (
-            <button
-              key={i}
-              onClick={() => setSelectedIndex(selectedIndex === i ? null : i)}
-              className={`relative rounded-[2rem] overflow-hidden border transition-all duration-500 aspect-square ${
-                selectedIndex === i
-                  ? "border-accent-foreground/40 shadow-xl scale-[1.02]"
-                  : "border-border/50 hover:border-border"
-              }`}
-            >
+        {/* Logo display */}
+        {logoUrl ? (
+          <div className="flex flex-col items-center gap-8">
+            <div className="relative w-full max-w-md aspect-square rounded-[2rem] overflow-hidden border border-border/50 bg-white shadow-xl">
+              {!imgLoaded && !imgError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-secondary/20">
+                  <Loader2 size={32} className="animate-spin text-muted-foreground" />
+                </div>
+              )}
+              {imgError && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-secondary/10 gap-3">
+                  <p className="text-sm text-muted-foreground">Erro ao carregar o logo</p>
+                  <button
+                    onClick={handleRegenerate}
+                    className="text-sm text-accent-foreground hover:underline"
+                  >
+                    Tentar novamente
+                  </button>
+                </div>
+              )}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={url}
-                alt={`Logo variação ${i + 1}`}
-                className="w-full h-full object-cover"
-                loading="lazy"
+                src={logoUrl}
+                alt={`Logo ${project.businessName}`}
+                className={`w-full h-full object-contain p-6 transition-opacity duration-500 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+                onLoad={() => setImgLoaded(true)}
+                onError={() => setImgError(true)}
               />
-              <div className="absolute bottom-4 left-4 bg-background/80 backdrop-blur-md rounded-full px-3 py-1 text-xs font-mono text-foreground">
-                Variação {i + 1}
-              </div>
-            </button>
-          ))}
-        </div>
+            </div>
 
-        {/* Expanded view */}
-        {selectedIndex !== null && urls[selectedIndex] && (
-          <div className="mt-8 flex justify-center">
-            <a
-              href={urls[selectedIndex]}
-              download={`${project.businessName}-logo-${selectedIndex + 1}.png`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-medium text-primary-foreground transition-all hover:scale-105 duration-300"
+            {imgLoaded && (
+              <a
+                href={logoUrl}
+                download={`${project.businessName}-logo.png`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-medium text-primary-foreground transition-all hover:scale-105 duration-300"
+              >
+                <Download size={14} />
+                Download PNG
+              </a>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-20">
+            <p className="text-muted-foreground">Nenhum logo disponível.</p>
+            <button
+              onClick={handleRegenerate}
+              disabled={isRegenerating}
+              className="mt-4 text-sm text-accent-foreground hover:underline"
             >
-              <Download size={14} />
-              Download PNG
-            </a>
+              Gerar logo
+            </button>
           </div>
         )}
       </main>

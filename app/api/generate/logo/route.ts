@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { generateLogoUrls } from "@/lib/pollinations";
 
+export const runtime = "edge";
+
 export async function POST(req: NextRequest) {
   try {
     const { businessName, businessArea, logoStyle, logoType } = await req.json();

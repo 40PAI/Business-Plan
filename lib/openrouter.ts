@@ -6,7 +6,7 @@ async function makeOpenRouterRequest(body: Record<string, unknown>) {
   if (!apiKey) throw new Error("OPENROUTER_API_KEY não configurada");
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 180000);
+  const timeout = setTimeout(() => controller.abort(), 300000);
 
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -178,7 +178,7 @@ export async function streamOpenRouter(
       model: OPENROUTER_MODEL,
       messages,
       stream: true,
-      max_tokens: 16000,
+      max_tokens: 40000,
       temperature: 0.7,
     });
 
@@ -193,7 +193,7 @@ export async function streamOpenRouter(
       model: "llama-3.3-70b-versatile",
       messages,
       stream: true,
-      max_tokens: 16000,
+      max_tokens: 32000,
       temperature: 0.7,
     });
     return createSSEStream(response);
@@ -320,56 +320,87 @@ function createSSEStream(response: Response): ReadableStream<Uint8Array> {
 
   return new ReadableStream({
     async pull(controller) {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          controller.close();
-          break;
-        }
-
-        buffer += decoder.decode(value, { stream: true });
-
-        // Process only complete lines (split by \n, keep last incomplete part in buffer)
-        const parts = buffer.split("\n");
-        buffer = parts.pop() || ""; // keep incomplete last line in buffer
-
-        for (const line of parts) {
-          const trimmed = line.trim();
-
-          // Skip empty lines and SSE comments (": OPENROUTER PROCESSING", etc.)
-          if (trimmed === "" || trimmed.startsWith(":")) continue;
-
-          // Handle SSE data lines
-          if (trimmed.startsWith("data: ")) {
-            const data = trimmed.slice(6);
-            if (data === "[DONE]") {
-              controller.close();
-              return;
-            }
-
-            try {
-              const parsed = JSON.parse(data);
-              const content = parsed.choices?.[0]?.delta?.content;
-              if (content) {
-                controller.enqueue(encoder.encode(content));
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            // Process any remaining buffer content before closing
+            if (buffer.trim()) {
+              const trimmed = buffer.trim();
+              if (trimmed.startsWith("data: ")) {
+                const data = trimmed.slice(6);
+                if (data !== "[DONE]") {
+                  try {
+                    const parsed = JSON.parse(data);
+                    const content = parsed.choices?.[0]?.delta?.content;
+                    if (content) {
+                      controller.enqueue(encoder.encode(content));
+                    }
+                  } catch {
+                    // skip
+                  }
+                }
               }
-            } catch {
-              // Skip malformed JSON chunks
             }
-            continue;
+            controller.close();
+            break;
           }
 
-          // Non-SSE plain text (Pollinations fallback) — emit directly
-          // but filter out anything that looks like OpenRouter metadata
-          if (
-            !trimmed.includes("OPENROUTER") &&
-            !trimmed.includes("PROCESSING") &&
-            !trimmed.startsWith("event:")
-          ) {
-            controller.enqueue(encoder.encode(trimmed + "\n"));
+          buffer += decoder.decode(value, { stream: true });
+
+          // Process only complete lines (split by \n, keep last incomplete part in buffer)
+          const parts = buffer.split("\n");
+          buffer = parts.pop() || ""; // keep incomplete last line in buffer
+
+          for (const line of parts) {
+            const trimmed = line.trim();
+
+            // Skip empty lines and SSE comments (": OPENROUTER PROCESSING", etc.)
+            if (trimmed === "" || trimmed.startsWith(":")) continue;
+
+            // Handle SSE data lines
+            if (trimmed.startsWith("data: ")) {
+              const data = trimmed.slice(6);
+              if (data === "[DONE]") {
+                controller.close();
+                return;
+              }
+
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content;
+                if (content) {
+                  controller.enqueue(encoder.encode(content));
+                }
+                // Check for finish_reason to detect model stopping
+                const finishReason = parsed.choices?.[0]?.finish_reason;
+                if (finishReason && finishReason !== "stop") {
+                  console.warn("Stream finished with reason:", finishReason);
+                }
+              } catch {
+                // Skip malformed JSON chunks
+              }
+              continue;
+            }
+
+            // Non-SSE plain text (Pollinations fallback) — emit directly
+            // but filter out anything that looks like OpenRouter metadata
+            if (
+              !trimmed.includes("OPENROUTER") &&
+              !trimmed.includes("PROCESSING") &&
+              !trimmed.startsWith("event:")
+            ) {
+              controller.enqueue(encoder.encode(trimmed + "\n"));
+            }
           }
         }
+      } catch (err) {
+        console.error("SSE stream error:", err);
+        controller.close();
       }
+    },
+    cancel() {
+      reader.cancel().catch(() => {});
     },
   });
 }
