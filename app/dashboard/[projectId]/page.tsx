@@ -30,7 +30,15 @@ export default function ProjectPage() {
   }, [projectId, router]);
 
   const updateProject = useCallback((updated: Project) => {
-    setProject({ ...updated });
+    // Deep clone artifacts to ensure React detects state changes
+    setProject({
+      ...updated,
+      artifacts: {
+        plan: { ...updated.artifacts.plan },
+        logo: { ...updated.artifacts.logo },
+        pitch: { ...updated.artifacts.pitch },
+      },
+    });
     saveProject(updated);
   }, []);
 
