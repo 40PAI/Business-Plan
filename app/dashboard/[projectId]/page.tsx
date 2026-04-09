@@ -112,8 +112,8 @@ export default function ProjectPage() {
         body: JSON.stringify({
           businessName: proj.businessName,
           businessArea: proj.businessArea,
-          logoStyle: extractDualA(proj.answers[13]),
-          logoType: extractDualB(proj.answers[13]),
+          logoStyle: extractDualA(proj.answers[12]),
+          logoType: extractDualB(proj.answers[12]),
         }),
       });
 
@@ -318,11 +318,14 @@ export default function ProjectPage() {
 }
 
 function extractDualA(answer: StepAnswer | undefined): string {
-  if (!answer || typeof answer !== "object" || !("dualA" in answer)) return "";
+  if (typeof answer === "string") return answer;
+  if (!answer || typeof answer !== "object" || !("dualA" in answer)) {
+    if (typeof answer === "object" && "selected" in answer) return (answer as any).selected;
+    return "";
+  }
   return (answer as { dualA: string }).dualA;
 }
 
 function extractDualB(answer: StepAnswer | undefined): string {
-  if (!answer || typeof answer !== "object" || !("dualB" in answer)) return "";
-  return (answer as { dualB: string }).dualB;
+  return ""; // Depreciado, logo generation should just take the visual style
 }

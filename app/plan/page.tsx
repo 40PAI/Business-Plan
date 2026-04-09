@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { nanoid } from "nanoid";
 import gsap from "gsap";
@@ -8,7 +8,7 @@ import { useGSAP } from "@gsap/react";
 import { ArrowLeft, ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 
 import { STEPS } from "@/lib/steps";
-import type { StepAnswer, Project } from "@/lib/types";
+import type { StepAnswer, Project, Step } from "@/lib/types";
 import { saveProject } from "@/lib/storage";
 
 import { ChipSelect } from "@/components/wizard/chip-select";
@@ -19,8 +19,7 @@ import { NameGenerator } from "@/components/wizard/name-generator";
 import { ContactInput } from "@/components/wizard/contact-input";
 import { StepProgress } from "@/components/wizard/step-progress";
 
-function getDefaultAnswer(stepIndex: number): StepAnswer {
-  const step = STEPS[stepIndex];
+function getDefaultAnswer(step: Step): StepAnswer {
   switch (step.type) {
     case "single-select":
       return step.options?.[0]?.conditionalFields
@@ -41,9 +40,7 @@ function getDefaultAnswer(stepIndex: number): StepAnswer {
   }
 }
 
-function isStepValid(stepIndex: number, answer: StepAnswer): boolean {
-  const step = STEPS[stepIndex];
-
+function isStepValid(step: Step, answer: StepAnswer): boolean {
   switch (step.type) {
     case "single-select": {
       if (step.options?.[0]?.conditionalFields) {
@@ -81,8 +78,8 @@ function isStepValid(stepIndex: number, answer: StepAnswer): boolean {
 }
 
 function extractBusinessName(answers: Record<number, StepAnswer>): string {
-  const a12 = answers[12] as { textValue?: string; selectedName?: string } | undefined;
-  return a12?.selectedName || a12?.textValue || "Sem nome";
+  const a11 = answers[11] as { textValue?: string; selectedName?: string } | undefined;
+  return a11?.selectedName || a11?.textValue || "Sem nome";
 }
 
 function extractBusinessArea(answers: Record<number, StepAnswer>): string {
@@ -99,13 +96,12 @@ function extractBusinessPhase(answers: Record<number, StepAnswer>): string {
 }
 
 function extractBusinessGoal(answers: Record<number, StepAnswer>): string {
-  const a11 = answers[11];
-  if (typeof a11 === "string") return a11;
+  // Goal was removed as step 11. Let's infer or return N/D.
   return "N/D";
 }
 
 export default function PlanWizard() {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, StepAnswer>>({});
   const [mounted, setMounted] = useState(false);
 
@@ -115,7 +111,7 @@ export default function PlanWizard() {
 
   // Restore from sessionStorage after mount to avoid hydration mismatch
   useEffect(() => {
-    const saved = sessionStorage.getItem("planai_wizard_progress");
+    const saved = sessionStorage.getItem("planai_wizard_progress_v2");
     if (saved) {
       try {
         setAnswers(JSON.parse(saved));
@@ -137,11 +133,32 @@ export default function PlanWizard() {
     { scope: container, dependencies: [mounted] }
   );
 
+  // Compute active steps based on answers (Step 1 determines sector conditional fields)
+  const activeSteps = useMemo(() => {
+    const sectorAnswer = extractBusinessArea(answers);
+    
+    return STEPS.filter((step) => {
+      if (!step.sectorCondition) return true;
+      // Step has a sector condition. Show only if the selected sector matches one of the prefixes.
+      return step.sectorCondition.some((condition) => 
+        sectorAnswer.toLowerCase().includes(condition.toLowerCase())
+      );
+    });
+  }, [answers]);
+
+  // Adjust current index if it goes out of bounds when activeSteps shrinks
+  useEffect(() => {
+    if (activeSteps.length > 0 && currentStepIndex >= activeSteps.length) {
+      setCurrentStepIndex(activeSteps.length - 1);
+    }
+  }, [activeSteps.length, currentStepIndex]);
+
+
   // Save progress to sessionStorage
   const persistProgress = useCallback(
     (updated: Record<number, StepAnswer>) => {
       if (typeof window !== "undefined") {
-        sessionStorage.setItem("planai_wizard_progress", JSON.stringify(updated));
+        sessionStorage.setItem("planai_wizard_progress_v2", JSON.stringify(updated));
       }
     },
     []
@@ -172,16 +189,18 @@ export default function PlanWizard() {
   };
 
   const handleNext = () => {
-    if (currentStep < STEPS.length - 1) {
-      animateTransition("next", () => setCurrentStep((prev) => prev + 1));
+    if (currentStepIndex < activeSteps.length - 1) {
+      animateTransition("next", () => setCurrentStepIndex((prev) => prev + 1));
     } else {
       handleGenerate();
     }
   };
 
   const handlePrev = () => {
-    if (currentStep > 0) {
-      animateTransition("prev", () => setCurrentStep((prev) => prev - 1));
+    // If we go back and change sector, it might drop active steps
+    // We deal with this mostly through the activeSteps filter
+    if (currentStepIndex > 0) {
+      animateTransition("prev", () => setCurrentStepIndex((prev) => prev - 1));
     } else {
       router.push("/");
     }
@@ -190,8 +209,8 @@ export default function PlanWizard() {
   const handleGenerate = () => {
     const projectId = nanoid(10);
 
-    // Extract contact info from step 14
-    const contactAnswer = answers[14] as { countryCode: string; whatsapp: string; email: string } | undefined;
+    // Extract contact info from step 13 (was 14)
+    const contactAnswer = answers[13] as { countryCode: string; whatsapp: string; email: string } | undefined;
     const contact = contactAnswer
       ? { countryCode: contactAnswer.countryCode, whatsapp: contactAnswer.whatsapp, email: contactAnswer.email }
       : undefined;
@@ -213,13 +232,15 @@ export default function PlanWizard() {
     };
 
     saveProject(project);
-    sessionStorage.removeItem("planai_wizard_progress");
+    sessionStorage.removeItem("planai_wizard_progress_v2");
     router.push(`/dashboard/${projectId}`);
   };
 
-  const step = STEPS[currentStep];
-  const currentAnswer = answers[step.id] ?? getDefaultAnswer(currentStep);
-  const valid = isStepValid(currentStep, currentAnswer);
+  if (!mounted || activeSteps.length === 0) return null;
+
+  const step = activeSteps[currentStepIndex];
+  const currentAnswer = answers[step.id] ?? getDefaultAnswer(step);
+  const valid = isStepValid(step, currentAnswer);
 
   return (
     <div
@@ -260,14 +281,17 @@ export default function PlanWizard() {
 
         {/* Step Progress */}
         <div className="mb-10">
-          <StepProgress currentStep={currentStep} totalSteps={STEPS.length} />
+          <StepProgress currentStep={currentStepIndex} totalSteps={activeSteps.length} />
         </div>
 
         {/* Form Container */}
         <div
           ref={formRef}
-          className="bg-secondary/20 backdrop-blur-xl border border-secondary/50 rounded-[2.5rem] p-8 md:p-12 shadow-2xl"
+          className="bg-secondary/20 backdrop-blur-xl border border-secondary/50 rounded-[2.5rem] p-8 md:p-12 shadow-2xl min-h-[400px]"
         >
+          <div className="mb-3 text-sm font-medium text-accent-foreground">
+            {step.block}
+          </div>
           <h2 className="font-serif italic text-3xl md:text-4xl tracking-tight mb-3 text-foreground">
             {step.title}.
           </h2>
@@ -298,7 +322,7 @@ export default function PlanWizard() {
                   }
                 }}
               />
-              {/* Conditional fields for step 2 */}
+              {/* Conditional fields */}
               {step.options[0]?.conditionalFields && (() => {
                 const ans = currentAnswer as { selected: string; conditionalValues?: Record<string, string> };
                 const selectedOption = step.options?.find((o) => o.label === ans.selected);
@@ -389,8 +413,8 @@ export default function PlanWizard() {
               className="group relative overflow-hidden rounded-full bg-foreground px-8 py-4 text-primary-foreground font-medium transition-all hover:scale-105 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] duration-500 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
             >
               <span className="relative z-10 flex items-center gap-2">
-                {currentStep === STEPS.length - 1 ? "Gerar Business Plan" : "Continuar"}
-                {currentStep === STEPS.length - 1 ? (
+                {currentStepIndex === activeSteps.length - 1 ? "Gerar Business Plan" : "Continuar"}
+                {currentStepIndex === activeSteps.length - 1 ? (
                   <CheckCircle2 size={16} />
                 ) : (
                   <ArrowRight

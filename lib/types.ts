@@ -42,6 +42,12 @@ export interface Step {
   dualGroups?: DualSelectGroup[];
   hasAiGenerate?: boolean;
   placeholder?: string;
+  /**
+   * If set, this step only appears when the sector chosen in step 1
+   * starts with one of these strings (case-insensitive prefix match).
+   * Steps without this field are always shown.
+   */
+  sectorCondition?: string[];
 }
 
 export type StepAnswer =
