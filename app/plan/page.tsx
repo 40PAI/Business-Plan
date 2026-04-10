@@ -26,7 +26,9 @@ function getDefaultAnswer(step: Step): StepAnswer {
         ? { selected: "", conditionalValues: {} }
         : "";
     case "multi-select":
-      return [];
+      return step.options?.[0]?.conditionalFields
+        ? { selected: [], conditionalValues: {} }
+        : [];
     case "numeric-fields":
       return { numericValues: {}, currency: "Kz", channels: [] };
     case "text-input":
@@ -49,8 +51,13 @@ function isStepValid(step: Step, answer: StepAnswer): boolean {
       }
       return typeof answer === "string" && answer.length > 0;
     }
-    case "multi-select":
+    case "multi-select": {
+      if (step.options?.[0]?.conditionalFields) {
+        const a = (answer as unknown) as { selected: string[]; conditionalValues?: Record<string, string> };
+        return Array.isArray(a.selected) && a.selected.length > 0;
+      }
       return Array.isArray(answer) && answer.length > 0;
+    }
     case "numeric-fields": {
       const a = answer as { numericValues: Record<string, string>; currency: string; channels: string[] };
       const allFilled = step.numericFields?.every(
@@ -322,38 +329,72 @@ export default function PlanWizard() {
                   }
                 }}
               />
-              {/* Conditional fields */}
-              {step.options[0]?.conditionalFields && (() => {
-                const ans = currentAnswer as { selected: string; conditionalValues?: Record<string, string> };
-                const selectedOption = step.options?.find((o) => o.label === ans.selected);
-                if (selectedOption?.conditionalFields) {
-                  return (
-                    <ConditionalFields
-                      fields={selectedOption.conditionalFields}
-                      values={ans.conditionalValues || {}}
-                      onChange={(vals) =>
-                        updateAnswer(step.id, {
-                          selected: ans.selected,
-                          conditionalValues: vals,
-                        })
-                      }
-                    />
-                  );
-                }
-                return null;
-              })()}
+              {/* Conditional fields logic handled below for both single and multi */}
             </div>
           )}
 
           {step.type === "multi-select" && step.options && (
-            <ChipSelect
-              options={step.options}
-              mode="multi"
-              maxSelect={step.maxSelect}
-              value={currentAnswer as string[]}
-              onChange={(val) => updateAnswer(step.id, val as string[])}
-            />
+            <div>
+              <ChipSelect
+                options={step.options}
+                mode="multi"
+                maxSelect={step.maxSelect}
+                value={
+                  step.options[0]?.conditionalFields
+                    ? (currentAnswer as { selected: string[] }).selected || []
+                    : (currentAnswer as string[])
+                }
+                onChange={(val) => {
+                  if (step.options?.[0]?.conditionalFields) {
+                    const prev = (currentAnswer as unknown) as { selected: string[]; conditionalValues?: Record<string, string> };
+                    updateAnswer(step.id, {
+                      selected: val as string[],
+                      conditionalValues: prev.conditionalValues || {},
+                    });
+                  } else {
+                    updateAnswer(step.id, val as string[]);
+                  }
+                }}
+              />
+            </div>
           )}
+
+          {/* Render conditional fields for any selected options (works for single or multi) */}
+          {step.options && step.options[0]?.conditionalFields && (() => {
+            const ans = (currentAnswer as unknown) as { selected: string | string[]; conditionalValues?: Record<string, string> };
+            const selectedArray = Array.isArray(ans.selected) ? ans.selected : ans.selected ? [ans.selected] : [];
+            
+            if (selectedArray.length === 0) return null;
+
+            return (
+              <div className="space-y-6 mt-8">
+                {selectedArray.map((sel) => {
+                  const option = step.options?.find((o) => o.label === sel);
+                  if (!option?.conditionalFields) return null;
+
+                  return (
+                    <div key={sel} className="animate-in fade-in slide-in-from-top-4 duration-500">
+                      <div className="flex items-center gap-2 mb-4 text-xs font-bold uppercase tracking-wider text-accent-foreground/60">
+                        <div className="h-px flex-1 bg-border" />
+                        <span>Sobre: {sel}</span>
+                        <div className="h-px flex-1 bg-border" />
+                      </div>
+                      <ConditionalFields
+                        fields={option.conditionalFields}
+                        values={ans.conditionalValues || {}}
+                        onChange={(vals) =>
+                          updateAnswer(step.id, {
+                            selected: ans.selected,
+                            conditionalValues: { ...ans.conditionalValues, ...vals },
+                          })
+                        }
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {step.type === "numeric-fields" && step.numericFields && (
             <NumericInput

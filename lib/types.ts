@@ -54,7 +54,7 @@ export type StepAnswer =
   | string
   | string[]
   | {
-      selected: string;
+      selected: string | string[];
       conditionalValues?: Record<string, string>;
     }
   | {

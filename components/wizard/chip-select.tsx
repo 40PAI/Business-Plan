@@ -12,7 +12,7 @@ interface ChipSelectProps {
   onChange: (value: string | string[]) => void;
 }
 
-export function ChipSelect({ options, mode, maxSelect = 3, value, onChange }: ChipSelectProps) {
+export function ChipSelect({ options, mode, maxSelect = 99, value, onChange }: ChipSelectProps) {
   const [otherText, setOtherText] = useState("");
   const selected = Array.isArray(value) ? value : value ? [value] : [];
 
@@ -103,9 +103,15 @@ export function ChipSelect({ options, mode, maxSelect = 3, value, onChange }: Ch
         </div>
       )}
 
-      {mode === "multi" && (
+      {mode === "multi" && maxSelect < 90 && (
         <p className="text-xs text-muted-foreground font-mono">
           {selected.length}/{maxSelect} seleccionados
+        </p>
+      )}
+
+      {mode === "multi" && maxSelect >= 90 && selected.length > 0 && (
+        <p className="text-xs text-muted-foreground font-mono">
+          {selected.length} seleccionados
         </p>
       )}
     </div>

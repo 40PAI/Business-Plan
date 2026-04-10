@@ -42,7 +42,7 @@ export const STEPS: Step[] = [
     blockIndex: 0,
     title: "Localização",
     description: "Em que província vai operar o seu negócio?",
-    type: "single-select",
+    type: "multi-select",
     options: [
       { label: "Luanda (capital)", icon: "Star" },
       { label: "Lunda Sul", icon: "MapPin" },
@@ -71,7 +71,7 @@ export const STEPS: Step[] = [
     blockIndex: 0,
     title: "Fase do Negócio",
     description: "Em que fase está o seu negócio? Seja honesto — não há resposta errada.",
-    type: "single-select",
+    type: "multi-select",
     options: [
       {
         label: "Não tenho nenhuma ideia",
@@ -125,7 +125,7 @@ export const STEPS: Step[] = [
     blockIndex: 1,
     title: "Problema que Resolve",
     description: "Qual o principal problema que o negócio resolve? Pense no cliente.",
-    type: "single-select",
+    type: "multi-select",
     options: [
       { label: "Poupa tempo", icon: "Clock" },
       { label: "Poupa dinheiro", icon: "PiggyBank" },
@@ -141,9 +141,9 @@ export const STEPS: Step[] = [
     block: "Mercado",
     blockIndex: 1,
     title: "Cliente Principal",
-    description: "Quem é o seu cliente principal? O foco é essencial (escolha até 3).",
+    description: "Quem é o seu cliente principal? O foco é essencial (pode escolher vários).",
     type: "multi-select",
-    maxSelect: 3,
+
     options: [
       { label: "Jovens 18–30 anos", icon: "User" },
       { label: "Adultos 30–50 anos", icon: "UserCheck" },
@@ -167,7 +167,7 @@ export const STEPS: Step[] = [
     blockIndex: 2,
     title: "Como vai receber",
     description: "Como é o modelo principal de receita?",
-    type: "single-select",
+    type: "multi-select",
     options: [
       { label: "Venda directa de produto ou serviço", icon: "ShoppingCart" },
       { label: "Mensalidade / Subscrição", icon: "RefreshCw" },
@@ -183,9 +183,9 @@ export const STEPS: Step[] = [
     block: "Modelo",
     blockIndex: 2,
     title: "Diferencial Competitivo",
-    description: "Por que as pessoas vão escolher você em vez do vizinho? (Máx 3)",
+    description: "Por que as pessoas vão escolher você em vez do vizinho?",
     type: "multi-select",
-    maxSelect: 3,
+
     options: [
       { label: "Preço mais acessível", icon: "BadgeDollarSign" },
       { label: "Produto de maior qualidade / luxo", icon: "Award" },
@@ -211,7 +211,7 @@ export const STEPS: Step[] = [
     blockIndex: 3,
     title: "Tipo de Negócio",
     description: "Qual é o formato principal?",
-    type: "single-select",
+    type: "multi-select",
     sectorCondition: ["Restauração / Alimentação"],
     options: [
       { label: "Restaurante com lugar sentado", icon: "Utensils" },
@@ -228,7 +228,7 @@ export const STEPS: Step[] = [
     blockIndex: 3,
     title: "Operação e Vendas",
     description: "Onde os clientes compram a tua comida?",
-    type: "single-select",
+    type: "multi-select",
     sectorCondition: ["Restauração / Alimentação"],
     options: [
       { label: "Apenas loja física (própria)", icon: "Store" },
@@ -244,7 +244,7 @@ export const STEPS: Step[] = [
     blockIndex: 3,
     title: "Produção",
     description: "Quem vai ficar na cozinha/produção?",
-    type: "single-select",
+    type: "multi-select",
     sectorCondition: ["Restauração / Alimentação"],
     options: [
       { label: "Eu mesmo vou cozinhar", icon: "User" },
@@ -260,9 +260,9 @@ export const STEPS: Step[] = [
     block: "Sector",
     blockIndex: 3,
     title: "Tipo de Produto",
-    description: "O que vais vender principalmente? (Máx 2)",
+    description: "O que vais vender principalmente?",
     type: "multi-select",
-    maxSelect: 2,
+
     sectorCondition: ["Moda / Atelier / Confecção"],
     options: [
       { label: "Roupa feminina", icon: "Shirt" },
@@ -279,7 +279,7 @@ export const STEPS: Step[] = [
     blockIndex: 3,
     title: "Cadeia de Valor",
     description: "Como adquires a roupa para vender?",
-    type: "single-select",
+    type: "multi-select",
     sectorCondition: ["Moda / Atelier / Confecção"],
     options: [
       { label: "Produzo cá do zero", icon: "Scissors" },
@@ -294,9 +294,9 @@ export const STEPS: Step[] = [
     block: "Sector",
     blockIndex: 3,
     title: "Canais de Venda",
-    description: "Como vais vender a roupa? (Máx 3)",
+    description: "Como vais vender a roupa?",
     type: "multi-select",
-    maxSelect: 3,
+
     sectorCondition: ["Moda / Atelier / Confecção"],
     options: [
       { label: "Loja de rua urbana / Boutique", icon: "Store" },
@@ -314,7 +314,7 @@ export const STEPS: Step[] = [
     blockIndex: 3,
     title: "Formato do Serviço",
     description: "Onde prestas o serviço de saúde ou beleza?",
-    type: "single-select",
+    type: "multi-select",
     sectorCondition: ["Saúde / Clínicas / Estética"],
     options: [
       { label: "Espaço próprio remodelado", icon: "Building" },
@@ -329,7 +329,7 @@ export const STEPS: Step[] = [
     blockIndex: 3,
     title: "Volume e Capacidade",
     description: "Quantos clientes consegues atender por dia?",
-    type: "single-select",
+    type: "multi-select",
     sectorCondition: ["Saúde / Clínicas / Estética"],
     options: [
       { label: "1 a 5 atendimentos personalizados", icon: "UserCheck" },
@@ -344,7 +344,7 @@ export const STEPS: Step[] = [
     blockIndex: 3,
     title: "Estrutura da Equipa",
     description: "Como tens a equipa estruturada agora?",
-    type: "single-select",
+    type: "multi-select",
     sectorCondition: ["Saúde / Clínicas / Estética"],
     options: [
       { label: "Sozinho(a) – Eu faço os serviços todos", icon: "User" },
@@ -361,7 +361,7 @@ export const STEPS: Step[] = [
     blockIndex: 3,
     title: "Tipo de Artigos",
     description: "O que vendes na tua loja/armazen?",
-    type: "single-select",
+    type: "multi-select",
     sectorCondition: ["Retalho / Comércio"],
     options: [
       { label: "Bens Alimentares ou Cantina / Minimercado", icon: "ShoppingCart" },
@@ -378,7 +378,7 @@ export const STEPS: Step[] = [
     blockIndex: 3,
     title: "Origem dos Produtos",
     description: "De onde vêm as coisas que vendes?",
-    type: "single-select",
+    type: "multi-select",
     sectorCondition: ["Retalho / Comércio"],
     options: [
       { label: "Só compramos a fornecedores/armazéns estatais", icon: "Truck" },
@@ -395,7 +395,7 @@ export const STEPS: Step[] = [
     blockIndex: 3,
     title: "Tipo de Formação",
     description: "Qual é o foco da educação?",
-    type: "single-select",
+    type: "multi-select",
     sectorCondition: ["Educação / Formação"],
     options: [
       { label: "Explicações e reforço escolar (crianças/jovens)", icon: "Pencil" },
@@ -412,7 +412,7 @@ export const STEPS: Step[] = [
     title: "Formato Escolar",
     description: "Como dão as aulas?",
     type: "multi-select",
-    maxSelect: 2,
+
     sectorCondition: ["Educação / Formação"],
     options: [
       { label: "Damos só as aulas num centro presencial", icon: "Building" },
@@ -427,7 +427,7 @@ export const STEPS: Step[] = [
     blockIndex: 3,
     title: "Volume Alunos",
     description: "Quantos formandos ou alunos por mês estima gerir?",
-    type: "single-select",
+    type: "multi-select",
     sectorCondition: ["Educação / Formação"],
     options: [
       { label: "1 a 10 alunos VIP / individuais", icon: "UserCheck" },
@@ -444,7 +444,7 @@ export const STEPS: Step[] = [
     blockIndex: 3,
     title: "Solução Digital",
     description: "Que tipo de solução de tecnologia ou IA é?",
-    type: "single-select",
+    type: "multi-select",
     sectorCondition: ["Tecnologia / Software / IA"],
     options: [
       { label: "Aplicação Móvel (iOS/Android)", icon: "Smartphone" },
@@ -460,7 +460,7 @@ export const STEPS: Step[] = [
     blockIndex: 3,
     title: "Capacidade de Produção",
     description: "No caso de plataformas/software, quem vai codificar ou fazer a solução?",
-    type: "single-select",
+    type: "multi-select",
     sectorCondition: ["Tecnologia / Software / IA"],
     options: [
       { label: "Eu mesmo sou programador / desenvolvedor", icon: "Code" },
@@ -478,7 +478,7 @@ export const STEPS: Step[] = [
     blockIndex: 3,
     title: "Operação e Vendas",
     description: "Qual o seu modelo financeiro específico?",
-    type: "single-select",
+    type: "multi-select",
     sectorCondition: ["Serviços Financeiros / Seguros"],
     options: [
       { label: "Casa de Câmbio ou Mediação", icon: "DollarSign" },
@@ -493,7 +493,7 @@ export const STEPS: Step[] = [
     blockIndex: 3,
     title: "Volume Moeda",
     description: "Qual o volume médio transaccionado (ou a movimentar) por mês?",
-    type: "single-select",
+    type: "multi-select",
     sectorCondition: ["Serviços Financeiros / Seguros"],
     options: [
       { label: "Menos de 1.000.000 AOA movimentados", icon: "Coins" },
@@ -510,7 +510,7 @@ export const STEPS: Step[] = [
     blockIndex: 3,
     title: "Operação e Serviço",
     description: "Qual o modelo do seu trânsporte ou logística?",
-    type: "single-select",
+    type: "multi-select",
     sectorCondition: ["Logística / Transporte"],
     options: [
       { label: "Tupuca local (moto / pequenos pacotes)", icon: "Bike" },
@@ -526,7 +526,7 @@ export const STEPS: Step[] = [
     blockIndex: 3,
     title: "Titularidade Frota",
     description: "A frota é própria?",
-    type: "single-select",
+    type: "multi-select",
     sectorCondition: ["Logística / Transporte"],
     options: [
       { label: "Tenho o meu mota/carro", icon: "Car" },
@@ -546,7 +546,7 @@ export const STEPS: Step[] = [
     blockIndex: 4,
     title: "Preço de Venda",
     description: "Se tivesse que fazer a média, quanto cada cliente paga numa compra/serviço?",
-    type: "single-select",
+    type: "multi-select",
     options: [
       { label: "Venda popular/pequena (Até 5.000 Kz)", icon: "Coins" },
       { label: "Ticket médio (5.000 a 20.000 Kz)", icon: "Banknote" },
@@ -561,7 +561,7 @@ export const STEPS: Step[] = [
     blockIndex: 4,
     title: "Custos Mensais",
     description: "Imagina o custo fixo para as tuas portas estarem abertas ou para ires para a rua trabalhar num mês, quanto seria?",
-    type: "single-select",
+    type: "multi-select",
     options: [
       { label: "Trabalho em casa (Quase zero ou muito pequeno, até 100k)", icon: "Home" },
       { label: "Uma base ligeira com net e alguma luz (Até 500k AOA/Mês)", icon: "BatteryLow" },
@@ -576,7 +576,7 @@ export const STEPS: Step[] = [
     blockIndex: 4,
     title: "Capital Disponível",
     description: "Onde estás agora a nível de capital para arrancar / sustentar as operações?",
-    type: "single-select",
+    type: "multi-select",
     options: [
       { label: "Abaixo de 500.000 Kz (Quero base bootstrapping)", icon: "BatteryWarning" },
       { label: "Abaixo de 2.000.000 Kz (Tenho pequeno pé de meia)", icon: "PiggyBank" },
@@ -605,7 +605,7 @@ export const STEPS: Step[] = [
     blockIndex: 5,
     title: "Estilo Visual",
     description: "Qual destas sensações de imagem passa melhor o que pretende para o seu branding?",
-    type: "single-select",
+    type: "multi-select",
     options: [
       { label: "Simples, Lojas de Shopping Internacionais", icon: "Minus" },
       { label: "Marcas modernas, minimalistas (Estilo Apple/Uber)", icon: "Smartphone" },
