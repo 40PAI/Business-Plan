@@ -173,19 +173,27 @@ export async function streamOpenRouter(
     { role: "user", content: userPrompt },
   ];
 
-  // Try OpenRouter first (streaming)
-  try {
-    const response = await makeOpenRouterRequest({
-      model: OPENROUTER_MODEL,
-      messages,
-      stream: true,
-      max_tokens: Math.min(maxTokens, 8192), // Claude 3.5 max output is 8192
-      temperature: 0.7,
-    });
+  // Try top Anthropic and Gemini models via OpenRouter in order
+  const orModels = [
+    "anthropic/claude-3.5-sonnet",
+    "google/gemini-2.5-pro",
+    "anthropic/claude-3-haiku",
+    "google/gemini-flash-1.5",
+  ];
 
-    return createSSEStream(response);
-  } catch (e1) {
-    console.warn("OpenRouter stream failed:", (e1 as Error).message);
+  for (const model of orModels) {
+    try {
+      const response = await makeOpenRouterRequest({
+        model,
+        messages,
+        stream: true,
+        max_tokens: Math.min(maxTokens, 8192),
+        temperature: 0.7,
+      });
+      return createSSEStream(response);
+    } catch (e1) {
+      console.warn(`OpenRouter stream failed for ${model}:`, (e1 as Error).message);
+    }
   }
 
   // Try Groq (streaming)
@@ -245,20 +253,29 @@ export async function callOpenRouter(
     { role: "user", content: userPrompt },
   ];
 
-  // Try OpenRouter first
-  try {
-    const response = await makeOpenRouterRequest({
-      model: OPENROUTER_MODEL,
-      messages,
-      max_tokens: Math.min(maxTokens, 8192),
-      temperature: 0.8,
-    });
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-    if (content) return content;
-    throw new Error("Empty response from OpenRouter");
-  } catch (e1) {
-    console.warn("OpenRouter call failed:", (e1 as Error).message);
+  const orModels = [
+    "anthropic/claude-3.5-sonnet",
+    "google/gemini-2.5-pro",
+    "anthropic/claude-3-haiku",
+    "google/gemini-flash-1.5",
+  ];
+
+  // Try top Anthropic and Gemini models via OpenRouter sequentially
+  for (const model of orModels) {
+    try {
+      const response = await makeOpenRouterRequest({
+        model,
+        messages,
+        max_tokens: Math.min(maxTokens, 8192),
+        temperature: 0.8,
+      });
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+      if (content) return content;
+      throw new Error(`Empty response from ${model}`);
+    } catch (e1) {
+      console.warn(`OpenRouter call failed for ${model}:`, (e1 as Error).message);
+    }
   }
 
   // Try Groq
