@@ -173,12 +173,16 @@ export async function streamOpenRouter(
     { role: "user", content: userPrompt },
   ];
 
-  // Try top Anthropic and Gemini models via OpenRouter in order
+  // Try models via OpenRouter — paid first, then free-tier fallbacks
   const orModels = [
-    "anthropic/claude-3.5-sonnet",
-    "google/gemini-2.5-pro",
+    "anthropic/claude-3.5-haiku",
     "anthropic/claude-3-haiku",
-    "google/gemini-flash-1.5",
+    "google/gemini-2.0-flash-001",
+    "google/gemini-flash-1.5-8b",
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "meta-llama/llama-3.1-8b-instruct:free",
+    "google/gemini-2.0-flash-exp:free",
+    "mistralai/mistral-7b-instruct:free",
   ];
 
   for (const model of orModels) {
@@ -254,13 +258,17 @@ export async function callOpenRouter(
   ];
 
   const orModels = [
-    "anthropic/claude-3.5-sonnet",
-    "google/gemini-2.5-pro",
+    "anthropic/claude-3.5-haiku",
     "anthropic/claude-3-haiku",
-    "google/gemini-flash-1.5",
+    "google/gemini-2.0-flash-001",
+    "google/gemini-flash-1.5-8b",
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "meta-llama/llama-3.1-8b-instruct:free",
+    "google/gemini-2.0-flash-exp:free",
+    "mistralai/mistral-7b-instruct:free",
   ];
 
-  // Try top Anthropic and Gemini models via OpenRouter sequentially
+  // Try models via OpenRouter sequentially
   for (const model of orModels) {
     try {
       const response = await makeOpenRouterRequest({

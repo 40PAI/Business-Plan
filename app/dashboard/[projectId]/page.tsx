@@ -21,15 +21,15 @@ const PHASE_LABELS: Record<"plan" | "pitch" | "logo", string> = {
 };
 
 const PHASE_PROGRESS: Record<"plan" | "pitch" | "logo", number> = {
-  plan: 33,
+  logo: 33,
   pitch: 66,
-  logo: 100,
+  plan: 100,
 };
 
 const PHASE_STEP: Record<"plan" | "pitch" | "logo", string> = {
-  plan: "1/3",
+  logo: "1/3",
   pitch: "2/3",
-  logo: "3/3",
+  plan: "3/3",
 };
 
 function GenerationBanner({
@@ -323,10 +323,12 @@ export default function ProjectPage() {
       // Because calls are awaited one at a time, there are zero concurrent mutations.
       // Each phase re-checks status so partial retries skip already-done artifacts.
 
-      if (proj.artifacts.plan.status !== "done") {
-        currentPhase = "plan";
-        setGenerationPhase("plan");
-        await generatePlan(proj);
+      // Order: logo → pitch → plan
+      // Logo is fastest, plan is slowest (5 streaming chunks)
+      if (proj.artifacts.logo.status !== "done") {
+        currentPhase = "logo";
+        setGenerationPhase("logo");
+        await generateLogo(proj);
       }
 
       if (proj.artifacts.pitch.status !== "done") {
@@ -335,10 +337,10 @@ export default function ProjectPage() {
         await generatePitch(proj);
       }
 
-      if (proj.artifacts.logo.status !== "done") {
-        currentPhase = "logo";
-        setGenerationPhase("logo");
-        await generateLogo(proj);
+      if (proj.artifacts.plan.status !== "done") {
+        currentPhase = "plan";
+        setGenerationPhase("plan");
+        await generatePlan(proj);
       }
 
       setGenerationPhase("done");
@@ -379,7 +381,11 @@ export default function ProjectPage() {
 
   if (!project) return null;
 
-  const planPreview = project.artifacts.plan.content?.slice(0, 150) || undefined;
+  const rawPlanContent = project.artifacts.plan.content || "";
+  const planPreviewText = rawPlanContent.startsWith("__MARKDOWN__\n")
+    ? rawPlanContent.slice("__MARKDOWN__\n".length)
+    : rawPlanContent;
+  const planPreview = planPreviewText ? planPreviewText.replace(/^#+\s*/gm, "").replace(/\*\*/g, "").slice(0, 150) : undefined;
 
   return (
     <div
