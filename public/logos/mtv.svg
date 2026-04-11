@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100">
+<rect width="120" height="100" fill="white"/>
+<rect x="4" y="4" width="62" height="72" rx="3" fill="none" stroke="#1a1a1a" stroke-width="5"/>
+<polygon points="10 8 14 4 66 4 66 76 62 76 62 12" fill="none" stroke="#1a1a1a" stroke-width="5"/>
+<text x="35" y="58" font-family="Arial Black,sans-serif" font-size="42" font-weight="900" fill="#1a1a1a" text-anchor="middle">M</text>
+<text x="94" y="72" font-family="Arial,sans-serif" font-size="36" font-weight="900" font-style="italic" fill="#1a1a1a" text-anchor="middle">tv</text>
+</svg>
