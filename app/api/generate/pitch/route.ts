@@ -1,25 +1,26 @@
-export const runtime = "edge";
+export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 import { NextRequest } from "next/server";
-import { streamOpenRouter } from "@/lib/openrouter";
+import { callOpenRouter } from "@/lib/openrouter";
 import { buildPitchSystemPrompt, buildPitchUserPrompt } from "@/lib/prompts";
 
 export async function POST(req: NextRequest) {
   try {
     const { answers } = await req.json();
 
-    // Stream directly from AI provider to client — avoids Vercel timeout.
-    // The client will accumulate the full content and parse slides JSON.
-    const stream = await streamOpenRouter(
+    // Calling the API directly (blocking) instead of streaming.
+    // Vercel hobby supports up to 60s for Node runtime.
+    // This completely prevents JSON corruption from stream keep-alive spaces.
+    const content = await callOpenRouter(
       buildPitchSystemPrompt(),
-      buildPitchUserPrompt(answers)
+      buildPitchUserPrompt(answers),
+      8000
     );
 
-    return new Response(stream, {
+    return new Response(content, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
-        "X-Content-Kind": "pitch-stream",
       },
     });
   } catch (error) {
