@@ -5,11 +5,84 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import { ArrowLeft, FileText, Palette, Presentation, Sparkles } from "lucide-react";
+import { ArrowLeft, FileText, Palette, Presentation, Sparkles, AlertCircle, RefreshCw } from "lucide-react";
 
 import { getProject, saveProject } from "@/lib/storage";
 import type { Project } from "@/lib/types";
 import { ArtifactCard } from "@/components/dashboard/artifact-card";
+
+type GenerationPhase = "idle" | "plan" | "pitch" | "logo" | "done" | "error";
+type FailedPhase = "plan" | "pitch" | "logo" | null;
+
+const PHASE_LABELS: Record<"plan" | "pitch" | "logo", string> = {
+  plan: "Business Plan",
+  pitch: "Pitch Deck",
+  logo: "Logo",
+};
+
+const PHASE_PROGRESS: Record<"plan" | "pitch" | "logo", number> = {
+  plan: 33,
+  pitch: 66,
+  logo: 100,
+};
+
+const PHASE_STEP: Record<"plan" | "pitch" | "logo", string> = {
+  plan: "1/3",
+  pitch: "2/3",
+  logo: "3/3",
+};
+
+function GenerationBanner({
+  phase,
+  failedPhase,
+  onRetry,
+}: {
+  phase: GenerationPhase;
+  failedPhase: FailedPhase;
+  onRetry: () => void;
+}) {
+  if (phase === "idle" || phase === "done") return null;
+
+  if (phase === "error" && failedPhase) {
+    return (
+      <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <AlertCircle size={18} className="text-red-400 shrink-0" />
+          <p className="text-sm text-red-300">
+            Erro ao gerar <span className="font-semibold">{PHASE_LABELS[failedPhase]}</span>.
+          </p>
+        </div>
+        <button
+          onClick={onRetry}
+          className="flex items-center gap-2 rounded-xl border border-red-400/40 px-4 py-2 text-xs font-medium text-red-300 hover:bg-red-400/10 transition-all shrink-0"
+        >
+          <RefreshCw size={12} />
+          Tentar novamente
+        </button>
+      </div>
+    );
+  }
+
+  const activePhase = phase as "plan" | "pitch" | "logo";
+  const progress = PHASE_PROGRESS[activePhase];
+
+  return (
+    <div className="mb-6 rounded-2xl border border-border/50 bg-secondary/20 backdrop-blur-md px-5 py-4">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm text-foreground/80">
+          A gerar <span className="font-semibold text-foreground">{PHASE_LABELS[activePhase]}</span>…
+        </p>
+        <span className="text-xs font-mono text-muted-foreground">{PHASE_STEP[activePhase]}</span>
+      </div>
+      <div className="h-1.5 w-full bg-secondary/50 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-accent-foreground rounded-full transition-all duration-700 ease-out"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    </div>
+  );
+}
 
 export default function ProjectPage() {
   const params = useParams();
@@ -17,6 +90,8 @@ export default function ProjectPage() {
   const projectId = params.projectId as string;
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [generationPhase, setGenerationPhase] = useState<GenerationPhase>("idle");
+  const [failedPhase, setFailedPhase] = useState<FailedPhase>(null);
   const container = useRef<HTMLDivElement>(null);
   const hasStartedGeneration = useRef(false);
 
@@ -35,7 +110,6 @@ export default function ProjectPage() {
   }, [projectId, router]);
 
   const updateProject = useCallback(async (updated: Project) => {
-    // Deep clone artifacts to ensure React detects state changes
     setProject({
       ...updated,
       artifacts: {
@@ -89,21 +163,17 @@ export default function ProjectPage() {
         const chunk = decoder.decode(value, { stream: true });
         const clean = chunk
           .replace(/: ?OPENROUTER PROCESSING\n?/g, "")
-          .replace(/OPENROUTER PROCESSING\n?/g, "")
-          .replace(/^ +/gm, (match, offset) => offset === 0 && match === chunk ? "" : match);
-        // Skip keep-alive spaces (single spaces or only whitespace chunks)
+          .replace(/OPENROUTER PROCESSING\n?/g, "");
         const trimmed = clean.replace(/ {2,}/g, " ").trim();
         if (trimmed) {
           content += clean;
           proj.artifacts.plan = { status: "generating", content };
-          // Debounce: only update React state + Supabase every 1.5s to avoid flooding
           const now = Date.now();
           if (now - lastSaveTime > 1500) {
             lastSaveTime = now;
             updateProject(proj);
           } else {
-            // Still update React state for UI responsiveness
-            setProject(prev => prev ? { ...prev, artifacts: { ...prev.artifacts, plan: { ...proj.artifacts.plan } } } : null);
+            setProject((prev: Project | null) => prev ? { ...prev, artifacts: { ...prev.artifacts, plan: { ...proj.artifacts.plan } } } : null);
           }
         }
       }
@@ -115,6 +185,7 @@ export default function ProjectPage() {
         error: error instanceof Error ? error.message : "Erro desconhecido",
       };
       updateProject(proj);
+      throw error; // re-throw so generateAll catches it
     }
   }, [updateProject]);
 
@@ -136,12 +207,10 @@ export default function ProjectPage() {
 
       const data = await res.json();
       const newUrl = data.storageUrl || data.urls[0];
-      
-      // Keep history: prepend the new one
       const currentUrls = proj.artifacts.logo.urls || [];
-      proj.artifacts.logo = { 
-        status: "done", 
-        urls: [newUrl, ...currentUrls] 
+      proj.artifacts.logo = {
+        status: "done",
+        urls: [newUrl, ...currentUrls],
       };
       await updateProject(proj);
     } catch (error) {
@@ -150,6 +219,7 @@ export default function ProjectPage() {
         error: error instanceof Error ? error.message : "Erro desconhecido",
       };
       updateProject(proj);
+      throw error;
     }
   }, [updateProject]);
 
@@ -169,7 +239,7 @@ export default function ProjectPage() {
         throw new Error(errData.error || `HTTP ${res.status}`);
       }
 
-      // Stream the response and accumulate content (avoids Vercel timeout)
+      // Stream the response and accumulate content
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
       let fullContent = "";
@@ -191,9 +261,7 @@ export default function ProjectPage() {
       } catch {
         try {
           const match = fullContent.match(/\[[\s\S]*\]/);
-          if (match) {
-            slides = JSON.parse(match[0]);
-          }
+          if (match) slides = JSON.parse(match[0]);
         } catch {
           slides = null;
         }
@@ -210,6 +278,7 @@ export default function ProjectPage() {
         error: error instanceof Error ? error.message : "Erro desconhecido",
       };
       updateProject(proj);
+      throw error;
     }
   }, [updateProject]);
 
@@ -246,15 +315,45 @@ export default function ProjectPage() {
   }, [updateProject]);
 
   const generateAll = useCallback(async (proj: Project) => {
-    await Promise.all([
-      generatePlan(proj),
-      generateLogo(proj),
-      generatePitch(proj),
-    ]);
+    setFailedPhase(null);
+    let currentPhase: "plan" | "pitch" | "logo" = "plan";
 
-    // Send webhook after all artifacts are generated
-    sendWebhook(proj);
-  }, [generatePlan, generateLogo, generatePitch, sendWebhook]);
+    try {
+      // Sequential generation — all three share the same `proj` object reference.
+      // Because calls are awaited one at a time, there are zero concurrent mutations.
+      // Each phase re-checks status so partial retries skip already-done artifacts.
+
+      if (proj.artifacts.plan.status !== "done") {
+        currentPhase = "plan";
+        setGenerationPhase("plan");
+        await generatePlan(proj);
+      }
+
+      if (proj.artifacts.pitch.status !== "done") {
+        currentPhase = "pitch";
+        setGenerationPhase("pitch");
+        await generatePitch(proj);
+      }
+
+      if (proj.artifacts.logo.status !== "done") {
+        currentPhase = "logo";
+        setGenerationPhase("logo");
+        await generateLogo(proj);
+      }
+
+      setGenerationPhase("done");
+
+      // sendWebhook has its own try/catch — failures never affect generationPhase
+      try {
+        await sendWebhook(proj);
+      } catch (err) {
+        console.error("Webhook error (non-fatal):", err);
+      }
+    } catch (err) {
+      setFailedPhase(currentPhase);
+      setGenerationPhase("error");
+    }
+  }, [generatePlan, generatePitch, generateLogo, sendWebhook]);
 
   useGSAP(
     () => {
@@ -328,6 +427,13 @@ export default function ProjectPage() {
           </p>
         </div>
 
+        {/* Generation progress banner */}
+        <GenerationBanner
+          phase={generationPhase}
+          failedPhase={failedPhase}
+          onRetry={() => generateAll(project)}
+        />
+
         {/* Artifact cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="project-reveal">
@@ -336,22 +442,11 @@ export default function ProjectPage() {
               icon={<FileText className="text-accent-foreground" />}
               artifact={project.artifacts.plan}
               viewHref={`/dashboard/${projectId}/plan`}
-              onRegenerate={() => generatePlan(project)}
+              onRegenerate={() => {
+                project.artifacts.plan = { status: "pending" };
+                generateAll(project);
+              }}
               preview={planPreview}
-            />
-          </div>
-          <div className="project-reveal">
-            <ArtifactCard
-              title="Logo"
-              icon={<Palette className="text-accent-foreground" />}
-              artifact={project.artifacts.logo}
-              viewHref={`/dashboard/${projectId}/logo`}
-              onRegenerate={() => generateLogo(project)}
-              preview={
-                project.artifacts.logo.urls
-                  ? `${project.artifacts.logo.urls.length} variações geradas`
-                  : undefined
-              }
             />
           </div>
           <div className="project-reveal">
@@ -360,10 +455,30 @@ export default function ProjectPage() {
               icon={<Presentation className="text-accent-foreground" />}
               artifact={project.artifacts.pitch}
               viewHref={`/dashboard/${projectId}/pitch`}
-              onRegenerate={() => generatePitch(project)}
+              onRegenerate={() => {
+                project.artifacts.pitch = { status: "pending" };
+                generateAll(project);
+              }}
               preview={
                 project.artifacts.pitch.content
-                  ? "10 slides prontos"
+                  ? "15 slides prontos"
+                  : undefined
+              }
+            />
+          </div>
+          <div className="project-reveal">
+            <ArtifactCard
+              title="Logo"
+              icon={<Palette className="text-accent-foreground" />}
+              artifact={project.artifacts.logo}
+              viewHref={`/dashboard/${projectId}/logo`}
+              onRegenerate={() => {
+                project.artifacts.logo = { status: "pending" };
+                generateAll(project);
+              }}
+              preview={
+                project.artifacts.logo.urls
+                  ? `${project.artifacts.logo.urls.length} variações geradas`
                   : undefined
               }
             />
