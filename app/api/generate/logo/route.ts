@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest } from "next/server";
 import { callOpenRouter } from "@/lib/openrouter";
 import { buildLogoPromptSystemPrompt, buildLogoPromptUserPrompt } from "@/lib/prompts";
