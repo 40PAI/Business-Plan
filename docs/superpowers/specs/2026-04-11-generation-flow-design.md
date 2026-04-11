@@ -8,7 +8,7 @@
 
 ## Problem
 
-The current `generateAll` runs `Promise.all([generatePlan, generatePitch, generateLogo])` in parallel. All three functions receive the same `proj` object by reference and mutate it concurrently. This causes a race condition: when `generatePitch` calls `updateProject(proj)`, it may overwrite `proj.artifacts.plan` with a stale generating/pending state, and vice-versa. The result is that one artifact ends up stuck as `"pending"` or `"error"` even though the API call succeeded.
+The current `generateAll` runs `Promise.all([generatePlan, generatePitch, generateLogo])` in parallel. All three functions receive the same `proj` object by reference and mutate it concurrently. This causes a race condition: when `generatePitch` calls `updateProject(proj)`, it may overwrite `proj.artifacts.plan` with a stale generating/pending state, and vice-versa. The result is one artifact stuck as `"pending"` or `"error"` even though the API call succeeded.
 
 ---
 
@@ -16,54 +16,83 @@ The current `generateAll` runs `Promise.all([generatePlan, generatePitch, genera
 
 ### State
 
-Add `generationPhase: "idle" | "plan" | "pitch" | "logo" | "done" | "error"` to the page component.
+Add to the page component:
+- `generationPhase: "idle" | "plan" | "pitch" | "logo" | "done" | "error"` — controls banner display
+- `failedPhase: "plan" | "pitch" | "logo" | null` — records which phase threw; cleared at start of every `generateAll` call
 
-### Flow
+No refs are needed for phase tracking. The current phase is tracked via a local `let currentPhase` variable inside `generateAll` — the catch block reads this local variable directly, avoiding all stale closure risk.
 
-```
-setPhase("plan")  → await generatePlan(freshProject)
-setPhase("pitch") → await generatePitch(freshProject)
-setPhase("logo")  → await generateLogo(freshProject)
-setPhase("done")  → sendWebhook(freshProject)
-```
-
-Each `generate*` function reads fresh project state from React before running — it does NOT receive a shared mutable object. This eliminates all concurrent mutation.
-
-### Smart Resume (Partial Retry)
-
-Before each phase, check the current artifact status:
+### `generateAll` — single entry point, always uses smart resume
 
 ```ts
-if (project.artifacts.plan.status !== "done") await generatePlan(project)
-if (project.artifacts.pitch.status !== "done") await generatePitch(project)
-if (project.artifacts.logo.status !== "done") await generateLogo(project)
+const generateAll = useCallback(async (proj: Project) => {
+  setFailedPhase(null)
+  let currentPhase: "plan" | "pitch" | "logo" = "plan"
+
+  try {
+    // Each generate* function mutates proj.artifacts.X in place and calls
+    // updateProject(proj). Because calls are sequential (awaited), there
+    // are zero concurrent mutations — no race condition possible.
+
+    if (proj.artifacts.plan.status !== "done") {
+      currentPhase = "plan"
+      setGenerationPhase("plan")
+      await generatePlan(proj)
+    }
+    if (proj.artifacts.pitch.status !== "done") {
+      currentPhase = "pitch"
+      setGenerationPhase("pitch")
+      await generatePitch(proj)
+    }
+    if (proj.artifacts.logo.status !== "done") {
+      currentPhase = "logo"
+      setGenerationPhase("logo")
+      await generateLogo(proj)
+    }
+
+    setGenerationPhase("done")
+
+    // sendWebhook has its own internal try/catch — failures are logged but
+    // do not affect generationPhase or failedPhase
+    sendWebhook(proj)
+
+  } catch (err) {
+    setFailedPhase(currentPhase)
+    setGenerationPhase("error")
+  }
+}, [generatePlan, generatePitch, generateLogo, sendWebhook])
 ```
 
-If a previous run completed the plan but failed on pitch, clicking "Tentar novamente" skips the plan and starts from pitch.
+**Mutation contract:** All three `generate*` functions receive and mutate the **same `proj` object reference** — not a clone. `generatePlan(proj)` sets `proj.artifacts.plan = { status: "done", ... }` in place. When `generatePitch(proj)` is called next, it reads `proj.artifacts.plan` (already updated) from the same object. This is safe because the calls are sequential — there is no concurrent access to `proj`.
 
-### Error Handling
+**Smart resume:** The initial call (on page load) passes the project loaded from Supabase. On retry, the current `project` state is passed — artifacts already marked "done" are skipped automatically.
 
-If a phase throws, set `generationPhase("error")` and stop. Show a banner:
+**`failedPhase` lifecycle:** Set to the local `currentPhase` variable when an error is caught. Cleared to `null` at the start of every `generateAll` call (including retries).
 
-```
-⚠ Erro ao gerar Business Plan.  [Tentar novamente]
-```
-
-The retry button calls `generateAll` again — which uses the smart resume logic above to skip already-done phases.
+**`sendWebhook` isolation:** Called after `setGenerationPhase("done")`, wrapped in its own `try/catch` block separate from the main one — not as a fire-and-forget. This guarantees that even if `sendWebhook`'s internal catch contract breaks, the thrown error is caught by its own wrapper, never reaches the main catch, and never sets `failedPhase` or triggers the error banner.
 
 ---
 
 ## UI: Progress Banner
 
-During generation, show a banner above the artifact cards:
+An inline `GenerationBanner` component rendered directly above the artifact cards grid inside `<main>` (not sticky, not portaled — flows with page content):
 
-- Phase label: "A gerar Business Plan... (1/3)"
-- Progress bar: fills proportionally (plan = 33%, pitch = 66%, logo = 100%)
-- When a phase finishes, its artifact card updates to "done" immediately
-- Banner disappears when `generationPhase === "done"`
-- Error state shows warning message + retry button
+```
+[ ████████░░░░ ]  A gerar Business Plan... (1/3)
+```
 
-The 3 artifact cards remain visible throughout. Cards not yet started show "A aguardar..." instead of a spinner.
+| Phase | Label | Bar % |
+|-------|-------|-------|
+| `"plan"` | A gerar Business Plan... (1/3) | 15% → 33% animated |
+| `"pitch"` | A gerar Pitch Deck... (2/3) | 33% → 66% animated |
+| `"logo"` | A gerar Logo... (3/3) | 66% → 100% animated |
+| `"done"` | hidden | — |
+| `"idle"` | hidden | — |
+| `"error"` | ⚠ Erro ao gerar [phase name]. [Tentar novamente] | — |
+
+Phase names for error message: `"plan"` → "Business Plan", `"pitch"` → "Pitch Deck", `"logo"` → "Logo".
+
+The 3 artifact cards remain visible throughout. Cards whose phase has not yet started show "A aguardar..." instead of a spinner.
 
 ---
 
@@ -71,7 +100,7 @@ The 3 artifact cards remain visible throughout. Cards not yet started show "A ag
 
 | File | Change |
 |------|--------|
-| `app/dashboard/[projectId]/page.tsx` | Add `generationPhase` state; rewrite `generateAll` to sequential; add `GenerationBanner` component |
+| `app/dashboard/[projectId]/page.tsx` | Add `generationPhase` + `failedPhase` state; rewrite `generateAll` to sequential with smart resume + local phase tracking; add inline `GenerationBanner` component above artifact grid; isolate `sendWebhook` from error path |
 
 ---
 
