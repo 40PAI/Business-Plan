@@ -1,8 +1,9 @@
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
+
 import { NextRequest } from "next/server";
 import { callOpenRouter } from "@/lib/openrouter";
 import { buildPitchSystemPrompt, buildPitchUserPrompt } from "@/lib/prompts";
-
-export const runtime = "edge";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,25 +12,39 @@ export async function POST(req: NextRequest) {
     const systemPrompt = buildPitchSystemPrompt();
     const userPrompt = buildPitchUserPrompt(answers);
 
-    const content = await callOpenRouter(systemPrompt, userPrompt);
+    const content = await callOpenRouter(systemPrompt, userPrompt, 12000);
 
-    // Try to parse JSON from the response
-    let slides;
+    // Aggressively extract JSON array from the response
+    let slides = null;
+
+    // Try: strip markdown fences and parse
     try {
-      // Handle case where model wraps in markdown code block
-      const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      const cleaned = content
+        .replace(/```json\s*/gi, "")
+        .replace(/```\s*/g, "")
+        .trim();
       slides = JSON.parse(cleaned);
     } catch {
-      slides = null;
+      // Try: find the first [...] block
+      try {
+        const match = content.match(/\[[\s\S]*\]/);
+        if (match) {
+          slides = JSON.parse(match[0]);
+        }
+      } catch {
+        slides = null;
+      }
     }
 
-    return Response.json({ slides, raw: content });
+    if (!Array.isArray(slides)) {
+      // Return raw content for client-side retry
+      return Response.json({ slides: null, raw: content });
+    }
+
+    return Response.json({ slides, raw: null });
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("Pitch generation error:", msg);
-    return Response.json(
-      { error: msg },
-      { status: 500 }
-    );
+    return Response.json({ error: msg }, { status: 500 });
   }
 }
