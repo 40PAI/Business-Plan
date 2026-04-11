@@ -3,6 +3,9 @@
     "app/api/generate/logo/route.ts": {
       "maxDuration": 60
     },
+    "app/api/generate/pitch/route.ts": {
+      "maxDuration": 60
+    },
     "app/api/generate/names/route.ts": {
       "maxDuration": 30
     },
