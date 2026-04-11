@@ -1,4 +1,4 @@
-const OPENROUTER_MODEL = "anthropic/claude-sonnet-4-6";
+const OPENROUTER_MODEL = "anthropic/claude-3.5-sonnet";
 
 // --- OpenRouter ---
 async function makeOpenRouterRequest(body: Record<string, unknown>) {
@@ -166,7 +166,7 @@ async function makeHuggingFaceRequest(
 export async function streamOpenRouter(
   systemPrompt: string,
   userPrompt: string,
-  maxTokens = 12000
+  maxTokens = 8000
 ): Promise<ReadableStream<Uint8Array>> {
   const messages = [
     { role: "system", content: systemPrompt },
@@ -179,7 +179,7 @@ export async function streamOpenRouter(
       model: OPENROUTER_MODEL,
       messages,
       stream: true,
-      max_tokens: maxTokens,
+      max_tokens: Math.min(maxTokens, 8192), // Claude 3.5 max output is 8192
       temperature: 0.7,
     });
 
@@ -238,7 +238,7 @@ export async function streamOpenRouter(
 export async function callOpenRouter(
   systemPrompt: string,
   userPrompt: string,
-  maxTokens = 4000
+  maxTokens = 8000
 ): Promise<string> {
   const messages = [
     { role: "system", content: systemPrompt },
@@ -250,7 +250,7 @@ export async function callOpenRouter(
     const response = await makeOpenRouterRequest({
       model: OPENROUTER_MODEL,
       messages,
-      max_tokens: maxTokens,
+      max_tokens: Math.min(maxTokens, 8192),
       temperature: 0.8,
     });
     const data = await response.json();
