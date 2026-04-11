@@ -19,42 +19,49 @@ export default function PitchViewer() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.projectId as string;
+  const [isLoading, setIsLoading] = useState(true);
   const [project, setProject] = useState<Project | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slides, setSlides] = useState<Slide[]>([]);
   const [exporting, setExporting] = useState(false);
+  const [exportingDoc, setExportingDoc] = useState(false);
 
   useEffect(() => {
-    const p = getProject(projectId);
-    if (!p) {
-      router.push("/dashboard");
-      return;
-    }
-    setProject(p);
+    async function loadProject() {
+      setIsLoading(true);
+      const p = await getProject(projectId);
+      if (!p) {
+        router.push("/dashboard");
+        return;
+      }
+      setProject(p);
 
-    // Parse slides
-    if (p.artifacts.pitch.content) {
-      try {
-        const parsed = JSON.parse(p.artifacts.pitch.content);
-        if (Array.isArray(parsed)) {
-          setSlides(parsed);
-        }
-      } catch {
-        // If content is a string (raw), try to parse it
+      // Parse slides
+      if (p.artifacts.pitch.content) {
         try {
-          const cleaned = p.artifacts.pitch.content
-            .replace(/```json\n?/g, "")
-            .replace(/```\n?/g, "")
-            .trim();
-          const parsed = JSON.parse(cleaned);
+          const parsed = JSON.parse(p.artifacts.pitch.content);
           if (Array.isArray(parsed)) {
             setSlides(parsed);
           }
         } catch {
-          setSlides([]);
+          // If content is a string (raw), try to parse it
+          try {
+            const cleaned = p.artifacts.pitch.content
+              .replace(/```json\n?/g, "")
+              .replace(/```\n?/g, "")
+              .trim();
+            const parsed = JSON.parse(cleaned);
+            if (Array.isArray(parsed)) {
+              setSlides(parsed);
+            }
+          } catch {
+            setSlides([]);
+          }
         }
       }
+      setIsLoading(false);
     }
+    loadProject();
   }, [projectId, router]);
 
   const handleExportPDF = useCallback(async () => {
@@ -68,6 +75,25 @@ export default function PitchViewer() {
     }
   }, [project, exporting, slides]);
 
+  const handleExportDOC = useCallback(async () => {
+    if (!project || exportingDoc || slides.length === 0) return;
+    setExportingDoc(true);
+    try {
+      const { generatePitchDOC } = await import("@/lib/pdf");
+      generatePitchDOC(project.businessName, slides);
+    } finally {
+      setExportingDoc(false);
+    }
+  }, [project, exportingDoc, slides]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
+        <div className="h-10 w-10 border-2 border-accent border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-muted-foreground font-mono text-sm">A carregar pitch do Supabase...</p>
+      </div>
+    );
+  }
   if (!project) return null;
 
   const slide = slides[currentSlide];
@@ -92,14 +118,24 @@ export default function PitchViewer() {
             <ArrowLeft size={16} />
             Voltar ao projecto
           </Link>
-          <button
-            onClick={handleExportPDF}
-            disabled={exporting || slides.length === 0}
-            className="flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-accent-foreground/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-            {exporting ? "A exportar..." : "Exportar PDF"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportDOC}
+              disabled={exportingDoc || slides.length === 0}
+              className="flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-accent-foreground/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {exportingDoc ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+              {exportingDoc ? "A exportar..." : "DOC"}
+            </button>
+            <button
+              onClick={handleExportPDF}
+              disabled={exporting || slides.length === 0}
+              className="flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-accent-foreground/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+              {exporting ? "A exportar..." : "PDF"}
+            </button>
+          </div>
         </div>
 
         {/* Title */}

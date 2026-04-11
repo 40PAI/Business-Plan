@@ -8,8 +8,7 @@ import { useGSAP } from "@gsap/react";
 import { ArrowLeft, FileText, Palette, Presentation, Sparkles } from "lucide-react";
 
 import { getProject, saveProject } from "@/lib/storage";
-import { generateLogoUrls } from "@/lib/pollinations";
-import type { Project, StepAnswer } from "@/lib/types";
+import type { Project } from "@/lib/types";
 import { ArtifactCard } from "@/components/dashboard/artifact-card";
 
 export default function ProjectPage() {
@@ -17,19 +16,25 @@ export default function ProjectPage() {
   const router = useRouter();
   const projectId = params.projectId as string;
   const [project, setProject] = useState<Project | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const container = useRef<HTMLDivElement>(null);
   const hasStartedGeneration = useRef(false);
 
   useEffect(() => {
-    const p = getProject(projectId);
-    if (!p) {
-      router.push("/dashboard");
-      return;
+    async function loadProject() {
+      setIsLoading(true);
+      const p = await getProject(projectId);
+      if (!p) {
+        router.push("/dashboard");
+        return;
+      }
+      setProject(p);
+      setIsLoading(false);
     }
-    setProject(p);
+    loadProject();
   }, [projectId, router]);
 
-  const updateProject = useCallback((updated: Project) => {
+  const updateProject = useCallback(async (updated: Project) => {
     // Deep clone artifacts to ensure React detects state changes
     setProject({
       ...updated,
@@ -39,7 +44,7 @@ export default function ProjectPage() {
         pitch: { ...updated.artifacts.pitch },
       },
     });
-    saveProject(updated);
+    await saveProject(updated);
   }, []);
 
   // Auto-generate on first load if all artifacts are pending
@@ -73,25 +78,42 @@ export default function ProjectPage() {
         throw new Error(errData.error || `HTTP ${res.status}`);
       }
 
-      const reader = res.body!.getReader();
-      const decoder = new TextDecoder();
-      let content = "";
+      const contentType = res.headers.get("content-type") || "";
+      const planFormat = res.headers.get("x-plan-format");
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        // Filter any residual processing markers
-        const clean = chunk.replace(/: ?OPENROUTER PROCESSING\n?/g, "").replace(/OPENROUTER PROCESSING\n?/g, "");
-        if (clean) {
-          content += clean;
-          proj.artifacts.plan = { status: "generating", content };
-          updateProject(proj);
+      if (contentType.includes("application/json")) {
+        // New structured JSON format
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        proj.artifacts.plan = {
+          status: "done",
+          content: JSON.stringify(data.plan),
+        };
+        updateProject(proj);
+      } else {
+        // Fallback: streaming markdown
+        const reader = res.body!.getReader();
+        const decoder = new TextDecoder();
+        let content = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          const clean = chunk
+            .replace(/: ?OPENROUTER PROCESSING\n?/g, "")
+            .replace(/OPENROUTER PROCESSING\n?/g, "");
+          if (clean) {
+            content += clean;
+            proj.artifacts.plan = { status: "generating", content };
+            updateProject(proj);
+          }
         }
+        // Mark as markdown format so viewer knows
+        proj.artifacts.plan = { status: "done", content: `__MARKDOWN__\n${content}` };
+        updateProject(proj);
       }
-
-      proj.artifacts.plan = { status: "done", content };
-      updateProject(proj);
+      // Suppress unused variable warning
+      void planFormat;
     } catch (error) {
       proj.artifacts.plan = {
         status: "error",
@@ -109,12 +131,7 @@ export default function ProjectPage() {
       const res = await fetch("/api/generate/logo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          businessName: proj.businessName,
-          businessArea: proj.businessArea,
-          logoStyle: extractDualA(proj.answers[12]),
-          logoType: extractDualB(proj.answers[12]),
-        }),
+        body: JSON.stringify({ answers: proj.answers, projectId: proj.id }),
       });
 
       if (!res.ok) {
@@ -123,8 +140,15 @@ export default function ProjectPage() {
       }
 
       const data = await res.json();
-      proj.artifacts.logo = { status: "done", urls: data.urls };
-      updateProject(proj);
+      const newUrl = data.storageUrl || data.urls[0];
+      
+      // Keep history: prepend the new one
+      const currentUrls = proj.artifacts.logo.urls || [];
+      proj.artifacts.logo = { 
+        status: "done", 
+        urls: [newUrl, ...currentUrls] 
+      };
+      await updateProject(proj);
     } catch (error) {
       proj.artifacts.logo = {
         status: "error",
@@ -153,7 +177,7 @@ export default function ProjectPage() {
       const data = await res.json();
       proj.artifacts.pitch = {
         status: "done",
-        content: JSON.stringify(data.slides || data.raw),
+        content: data.slides ? JSON.stringify(data.slides) : (data.raw || ""),
       };
       updateProject(proj);
     } catch (error) {
@@ -220,6 +244,15 @@ export default function ProjectPage() {
     },
     { scope: container }
   );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+        <div className="h-10 w-10 border-2 border-accent border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-muted-foreground font-mono text-sm animate-pulse">Obtendo projecto do Supabase...</p>
+      </div>
+    );
+  }
 
   if (!project) return null;
 
@@ -315,17 +348,4 @@ export default function ProjectPage() {
       </main>
     </div>
   );
-}
-
-function extractDualA(answer: StepAnswer | undefined): string {
-  if (typeof answer === "string") return answer;
-  if (!answer || typeof answer !== "object" || !("dualA" in answer)) {
-    if (typeof answer === "object" && "selected" in answer) return (answer as any).selected;
-    return "";
-  }
-  return (answer as { dualA: string }).dualA;
-}
-
-function extractDualB(answer: StepAnswer | undefined): string {
-  return ""; // Depreciado, logo generation should just take the visual style
 }

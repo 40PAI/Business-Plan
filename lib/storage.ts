@@ -1,51 +1,89 @@
+import { supabase } from "./supabase";
 import type { Project, ArtifactState } from "./types";
 
-const STORAGE_KEY = "planai_projects";
-const MAX_PROJECTS = 10;
+function mapFromDB(row: any): Project {
+  return {
+    id: row.id,
+    createdAt: row.created_at,
+    businessName: row.business_name,
+    businessArea: row.business_area,
+    businessPhase: row.business_phase,
+    businessGoal: row.business_goal,
+    contact: row.contact,
+    answers: row.answers,
+    artifacts: row.artifacts,
+    webhookSent: row.webhook_sent,
+  };
+}
 
-export function getProjects(): Project[] {
-  if (typeof window === "undefined") return [];
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return [];
-  try {
-    return JSON.parse(raw) as Project[];
-  } catch {
+function mapToDB(p: Project) {
+  return {
+    id: p.id,
+    business_name: p.businessName,
+    business_area: p.businessArea,
+    business_phase: p.businessPhase,
+    business_goal: p.businessGoal,
+    contact: p.contact,
+    answers: p.answers,
+    artifacts: p.artifacts,
+    webhook_sent: p.webhookSent,
+    created_at: p.createdAt,
+  };
+}
+
+export async function getProjects(): Promise<Project[]> {
+  const { data, error } = await supabase
+    .from("projects")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching projects:", error);
     return [];
   }
+
+  return data.map(mapFromDB);
 }
 
-export function getProject(id: string): Project | null {
-  const projects = getProjects();
-  return projects.find((p) => p.id === id) || null;
-}
+export async function getProject(id: string): Promise<Project | null> {
+  const { data, error } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("id", id)
+    .single();
 
-export function saveProject(project: Project): void {
-  const projects = getProjects();
-  const index = projects.findIndex((p) => p.id === project.id);
-
-  if (index >= 0) {
-    projects[index] = project;
-  } else {
-    projects.unshift(project);
-    if (projects.length > MAX_PROJECTS) {
-      projects.pop();
-    }
+  if (error) {
+    console.error("Error fetching project:", error);
+    return null;
   }
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+  return mapFromDB(data);
 }
 
-export function deleteProject(id: string): void {
-  const projects = getProjects().filter((p) => p.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+export async function saveProject(project: Project): Promise<void> {
+  const dbData = mapToDB(project);
+  const { error } = await supabase.from("projects").upsert(dbData);
+
+  if (error) {
+    console.error("Error saving project:", error);
+    throw error;
+  }
 }
 
-export function updateArtifact(
+export async function deleteProject(id: string): Promise<void> {
+  const { error } = await supabase.from("projects").delete().eq("id", id);
+  if (error) {
+    console.error("Error deleting project:", error);
+    throw error;
+  }
+}
+
+export async function updateArtifact(
   projectId: string,
   artifact: "plan" | "logo" | "pitch",
   state: Partial<ArtifactState>
-): Project | null {
-  const project = getProject(projectId);
+): Promise<Project | null> {
+  const project = await getProject(projectId);
   if (!project) return null;
 
   project.artifacts[artifact] = {
@@ -53,12 +91,12 @@ export function updateArtifact(
     ...state,
   };
 
-  saveProject(project);
+  await saveProject(project);
   return project;
 }
 
-export function getProjectStats() {
-  const projects = getProjects();
+export async function getProjectStats() {
+  const projects = await getProjects();
   const totalProjects = projects.length;
   const lastGenerated = projects[0]?.createdAt || null;
 
@@ -81,15 +119,19 @@ export function getProjectStats() {
 
   const processExtract = (ans: any, record: Record<string, number>) => {
     if (!ans) return;
-    if (typeof ans === 'string') {
+    if (typeof ans === "string") {
       record[ans] = (record[ans] || 0) + 1;
     } else if (Array.isArray(ans)) {
-      ans.forEach(a => { if (typeof a === 'string') record[a] = (record[a] || 0) + 1; });
-    } else if (typeof ans === 'object' && ans.selected) {
-      if (typeof ans.selected === 'string') {
+      ans.forEach((a) => {
+        if (typeof a === "string") record[a] = (record[a] || 0) + 1;
+      });
+    } else if (typeof ans === "object" && ans.selected) {
+      if (typeof ans.selected === "string") {
         record[ans.selected] = (record[ans.selected] || 0) + 1;
       } else if (Array.isArray(ans.selected)) {
-        ans.selected.forEach((a: string) => { record[a] = (record[a] || 0) + 1; });
+        ans.selected.forEach((a: string) => {
+          record[a] = (record[a] || 0) + 1;
+        });
       }
     }
   };
@@ -105,31 +147,27 @@ export function getProjectStats() {
     if (t >= startOfMonth) thisMonth++;
     if (t >= startOfYear) thisYear++;
 
-    // Answer 1: Sector
     processExtract(p.answers[1], sectors);
-    // Answer 2: Region (Location / Província)
     processExtract(p.answers[2], regions);
-    // Answer 4: Clients (Target audience)
     processExtract(p.answers[4], clients);
-    // Answer 6: Sales Channels / Revenue model
     processExtract(p.answers[6], channels);
   }
 
   const getTop = (record: Record<string, number>, limit: number = 5) => {
     return Object.entries(record)
-      .sort((a, b) => b[1] - a[1]) // sort descending
+      .sort((a, b) => b[1] - a[1])
       .slice(0, limit)
       .map(([name, count]) => ({ name, count }));
   };
 
-  return { 
-    totalProjects, 
-    lastGenerated, 
+  return {
+    totalProjects,
+    lastGenerated,
     totalArtifacts,
     temporal: { today, thisWeek, thisMonth, thisYear },
     topRegions: getTop(regions),
     topSectors: getTop(sectors),
     topClients: getTop(clients),
-    topChannels: getTop(channels)
+    topChannels: getTop(channels),
   };
 }

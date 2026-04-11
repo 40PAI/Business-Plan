@@ -4,7 +4,8 @@ export type StepType =
   | "text-input"
   | "numeric-fields"
   | "dual-select"
-  | "contact-input";
+  | "contact-input"
+  | "logo-type-select";
 
 export interface SelectOption {
   label: string;

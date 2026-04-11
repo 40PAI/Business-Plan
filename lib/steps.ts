@@ -603,16 +603,9 @@ export const STEPS: Step[] = [
     id: 12,
     block: "Marca",
     blockIndex: 5,
-    title: "Estilo Visual",
-    description: "Qual destas sensações de imagem passa melhor o que pretende para o seu branding?",
-    type: "multi-select",
-    options: [
-      { label: "Simples, Lojas de Shopping Internacionais", icon: "Minus" },
-      { label: "Marcas modernas, minimalistas (Estilo Apple/Uber)", icon: "Smartphone" },
-      { label: "Elegante e Luxuoso", icon: "Gem" },
-      { label: "Sério, Institucional (Bancos, Anglobal)", icon: "Landmark" },
-      { label: "Muito Colorido, Jovem, Informal ou Tradicional", icon: "Palette" },
-    ],
+    title: "Tipo de Logo",
+    description: "Que tipo de logo quer para a sua marca? Escolha o estilo que melhor representa o seu negócio.",
+    type: "logo-type-select",
   },
 
   // ==========================================

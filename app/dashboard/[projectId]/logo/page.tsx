@@ -11,18 +11,24 @@ export default function LogoViewer() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.projectId as string;
+  const [isLoading, setIsLoading] = useState(true);
   const [project, setProject] = useState<Project | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
-    const p = getProject(projectId);
-    if (!p) {
-      router.push("/dashboard");
-      return;
+    async function loadProject() {
+      setIsLoading(true);
+      const p = await getProject(projectId);
+      if (!p) {
+        router.push("/dashboard");
+        return;
+      }
+      setProject(p);
+      setIsLoading(false);
     }
-    setProject(p);
+    loadProject();
   }, [projectId, router]);
 
   const handleRegenerate = async () => {
@@ -35,17 +41,19 @@ export default function LogoViewer() {
       const res = await fetch("/api/generate/logo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          businessName: project.businessName,
-          businessArea: project.businessArea,
-          logoStyle: extractDual(project.answers[13], "dualA"),
-          logoType: extractDual(project.answers[13], "dualB"),
-        }),
+        body: JSON.stringify({ answers: project.answers, projectId: project.id }),
       });
 
       const data = await res.json();
-      project.artifacts.logo = { status: "done", urls: data.urls };
-      saveProject(project);
+      const newUrl = data.storageUrl || data.urls[0];
+      
+      const currentUrls = project.artifacts.logo.urls || [];
+      project.artifacts.logo = { 
+        status: "done", 
+        urls: [newUrl, ...currentUrls] 
+      };
+      
+      await saveProject(project);
       setProject({ ...project });
     } catch {
       // Keep existing logo
@@ -54,6 +62,14 @@ export default function LogoViewer() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
+        <div className="h-10 w-10 border-2 border-accent border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-muted-foreground font-mono text-sm">A carregar logo do Supabase...</p>
+      </div>
+    );
+  }
   if (!project) return null;
 
   const logoUrl = project.artifacts.logo.urls?.[0];
@@ -140,8 +156,29 @@ export default function LogoViewer() {
                 className="flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-medium text-primary-foreground transition-all hover:scale-105 duration-300"
               >
                 <Download size={14} />
-                Download PNG
+                Download PNG (Versão Actual)
               </a>
+            )}
+
+            {/* History Section */}
+            {project.artifacts.logo.urls && project.artifacts.logo.urls.length > 1 && (
+              <div className="w-full mt-12 border-t border-border/40 pt-10">
+                <h3 className="font-serif italic text-2xl text-foreground mb-6">Histórico de Versões</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {project.artifacts.logo.urls.slice(1).map((url, i) => (
+                    <div key={i} className="group relative aspect-square rounded-2xl border border-border/40 bg-white overflow-hidden hover:border-accent-foreground/30 transition-all">
+                      <img src={url} alt={`Antigo ${i}`} className="w-full h-full object-contain p-4 opacity-70 group-hover:opacity-100 transition-opacity" />
+                      <a 
+                        href={url} 
+                        download={`logo-v${project.artifacts.logo.urls!.length - i - 1}.png`}
+                        className="absolute inset-0 flex items-center justify-center bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Download size={20} className="text-foreground" />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         ) : (
@@ -159,10 +196,4 @@ export default function LogoViewer() {
       </main>
     </div>
   );
-}
-
-function extractDual(answer: unknown, key: "dualA" | "dualB"): string {
-  if (!answer || typeof answer !== "object" || !(key in (answer as Record<string, unknown>)))
-    return "";
-  return (answer as Record<string, string>)[key];
 }

@@ -18,6 +18,7 @@ import { DualSelect } from "@/components/wizard/dual-select";
 import { NameGenerator } from "@/components/wizard/name-generator";
 import { ContactInput } from "@/components/wizard/contact-input";
 import { StepProgress } from "@/components/wizard/step-progress";
+import { LogoTypeSelect } from "@/components/wizard/logo-type-select";
 
 function getDefaultAnswer(step: Step): StepAnswer {
   switch (step.type) {
@@ -35,6 +36,8 @@ function getDefaultAnswer(step: Step): StepAnswer {
       return { textValue: "", aiGenerated: [], selectedName: undefined };
     case "dual-select":
       return { dualA: "", dualB: "" };
+    case "logo-type-select":
+      return "";
     case "contact-input":
       return { countryCode: "+244", whatsapp: "", email: "" };
     default:
@@ -73,6 +76,8 @@ function isStepValid(step: Step, answer: StepAnswer): boolean {
       const a = answer as { dualA: string; dualB: string };
       return !!a.dualA && !!a.dualB;
     }
+    case "logo-type-select":
+      return typeof answer === "string" && answer.length > 0;
     case "contact-input": {
       const a = answer as { countryCode: string; whatsapp: string; email: string };
       const hasWhatsapp = a.whatsapp.length >= 6;
@@ -102,8 +107,7 @@ function extractBusinessPhase(answers: Record<number, StepAnswer>): string {
   return "N/D";
 }
 
-function extractBusinessGoal(answers: Record<number, StepAnswer>): string {
-  // Goal was removed as step 11. Let's infer or return N/D.
+function extractBusinessGoal(_answers: Record<number, StepAnswer>): string {
   return "N/D";
 }
 
@@ -111,6 +115,7 @@ export default function PlanWizard() {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, StepAnswer>>({});
   const [mounted, setMounted] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const container = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
@@ -213,34 +218,40 @@ export default function PlanWizard() {
     }
   };
 
-  const handleGenerate = () => {
-    const projectId = nanoid(10);
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    try {
+      const projectId = nanoid(10);
 
-    // Extract contact info from step 13 (was 14)
-    const contactAnswer = answers[13] as { countryCode: string; whatsapp: string; email: string } | undefined;
-    const contact = contactAnswer
-      ? { countryCode: contactAnswer.countryCode, whatsapp: contactAnswer.whatsapp, email: contactAnswer.email }
-      : undefined;
+      // Extract contact info from step 13 (was 14)
+      const contactAnswer = answers[13] as { countryCode: string; whatsapp: string; email: string } | undefined;
+      const contact = contactAnswer
+        ? { countryCode: contactAnswer.countryCode, whatsapp: contactAnswer.whatsapp, email: contactAnswer.email }
+        : undefined;
 
-    const project: Project = {
-      id: projectId,
-      createdAt: new Date().toISOString(),
-      businessName: extractBusinessName(answers),
-      businessArea: extractBusinessArea(answers),
-      businessPhase: extractBusinessPhase(answers),
-      businessGoal: extractBusinessGoal(answers),
-      contact,
-      answers,
-      artifacts: {
-        plan: { status: "pending" },
-        logo: { status: "pending" },
-        pitch: { status: "pending" },
-      },
-    };
+      const project: Project = {
+        id: projectId,
+        createdAt: new Date().toISOString(),
+        businessName: extractBusinessName(answers),
+        businessArea: extractBusinessArea(answers),
+        businessPhase: extractBusinessPhase(answers),
+        businessGoal: extractBusinessGoal(answers),
+        contact,
+        answers,
+        artifacts: {
+          plan: { status: "pending" },
+          logo: { status: "pending" },
+          pitch: { status: "pending" },
+        },
+      };
 
-    saveProject(project);
-    sessionStorage.removeItem("planai_wizard_progress_v2");
-    router.push(`/dashboard/${projectId}`);
+      await saveProject(project);
+      sessionStorage.removeItem("planai_wizard_progress_v2");
+      router.push(`/dashboard/${projectId}`);
+    } catch (err) {
+      console.error("Error generating project:", err);
+      setIsGenerating(false);
+    }
   };
 
   if (!mounted || activeSteps.length === 0) return null;
@@ -433,6 +444,13 @@ export default function PlanWizard() {
             />
           )}
 
+          {step.type === "logo-type-select" && (
+            <LogoTypeSelect
+              value={currentAnswer as string}
+              onChange={(val) => updateAnswer(step.id, val)}
+            />
+          )}
+
           {step.type === "contact-input" && (
             <ContactInput
               value={
@@ -450,18 +468,27 @@ export default function PlanWizard() {
           <div className="mt-10 flex justify-end">
             <button
               onClick={handleNext}
-              disabled={!valid}
+              disabled={!valid || isGenerating}
               className="group relative overflow-hidden rounded-full bg-foreground px-8 py-4 text-primary-foreground font-medium transition-all hover:scale-105 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] duration-500 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
             >
               <span className="relative z-10 flex items-center gap-2">
-                {currentStepIndex === activeSteps.length - 1 ? "Gerar Business Plan" : "Continuar"}
-                {currentStepIndex === activeSteps.length - 1 ? (
-                  <CheckCircle2 size={16} />
+                {isGenerating ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                    A preparar plano...
+                  </>
                 ) : (
-                  <ArrowRight
-                    size={16}
-                    className="transition-transform group-hover:translate-x-1"
-                  />
+                  <>
+                    {currentStepIndex === activeSteps.length - 1 ? "Gerar Business Plan" : "Continuar"}
+                    {currentStepIndex === activeSteps.length - 1 ? (
+                      <CheckCircle2 size={16} />
+                    ) : (
+                      <ArrowRight
+                        size={16}
+                        className="transition-transform group-hover:translate-x-1"
+                      />
+                    )}
+                  </>
                 )}
               </span>
               <div className="absolute inset-0 z-0 bg-accent translate-y-full transition-transform duration-500 group-hover:translate-y-0" />

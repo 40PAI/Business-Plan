@@ -1,4 +1,4 @@
-const OPENROUTER_MODEL = "google/gemini-2.5-flash";
+const OPENROUTER_MODEL = "anthropic/claude-sonnet-4-6";
 
 // --- OpenRouter ---
 async function makeOpenRouterRequest(body: Record<string, unknown>) {
@@ -236,7 +236,8 @@ export async function streamOpenRouter(
 
 export async function callOpenRouter(
   systemPrompt: string,
-  userPrompt: string
+  userPrompt: string,
+  maxTokens = 4000
 ): Promise<string> {
   const messages = [
     { role: "system", content: systemPrompt },
@@ -248,7 +249,7 @@ export async function callOpenRouter(
     const response = await makeOpenRouterRequest({
       model: OPENROUTER_MODEL,
       messages,
-      max_tokens: 4000,
+      max_tokens: maxTokens,
       temperature: 0.8,
     });
     const data = await response.json();
@@ -264,7 +265,7 @@ export async function callOpenRouter(
     const response = await makeGroqRequest({
       model: "llama-3.3-70b-versatile",
       messages,
-      max_tokens: 4000,
+      max_tokens: Math.min(maxTokens, 8000),
       temperature: 0.8,
     });
     const data = await response.json();

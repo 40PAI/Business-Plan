@@ -44,12 +44,27 @@ function TopList({ title, icon, items }: { title: string, icon: React.ReactNode,
 export default function Dashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [stats, setStats] = useState<any>({ totalProjects: 0, lastGenerated: null, totalArtifacts: 0 });
+  const [isLoading, setIsLoading] = useState(true);
   const container = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setProjects(getProjects());
-    setStats(getProjectStats());
-  }, []);
+    async function loadData() {
+      setIsLoading(true);
+      try {
+        const [projData, statsData] = await Promise.all([
+          getProjects(),
+          getProjectStats()
+        ]);
+        setProjects(projData);
+        setStats(statsData);
+      } catch (err) {
+        console.error("Failed to load dashboard data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, [projects.length]);
 
   useGSAP(
     () => {
@@ -128,7 +143,12 @@ export default function Dashboard() {
         )}
 
         {/* Projects list */}
-        {projects.length === 0 ? (
+        {isLoading ? (
+          <div className="dashboard-reveal flex flex-col items-center justify-center py-24 text-center">
+            <div className="h-10 w-10 border-2 border-accent border-t-transparent rounded-full animate-spin mb-4" />
+            <p className="text-muted-foreground font-mono text-sm">A carregar dados do Supabase...</p>
+          </div>
+        ) : projects.length === 0 ? (
           <div className="dashboard-reveal flex flex-col items-center justify-center py-24 text-center">
             <div className="h-16 w-16 rounded-full bg-secondary/30 flex items-center justify-center mb-6 border border-border/50">
               <Sparkles size={24} className="text-muted-foreground" />

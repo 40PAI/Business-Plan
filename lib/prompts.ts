@@ -206,6 +206,120 @@ INSTRUÇÕES:
 Responda APENAS com o JSON array.`;
 }
 
+export function buildLogoPromptSystemPrompt(): string {
+  return `You are an expert brand designer who crafts precise image generation prompts for professional business logos.
+
+TASK: Generate a single, detailed image generation prompt in English for an AI image model (FLUX, Midjourney, DALL-E style).
+
+RULES:
+- Write ONLY in English
+- Describe: visual style, shape/symbol, color palette, typography hint, composition
+- Always include: white or transparent background, professional vector-style, no photorealism
+- Specify it is a LOGO — not a photo, not a scene
+- Keep it between 60-120 words
+- Respond with ONLY the prompt text. No preamble, no explanation, no quotes.`;
+}
+
+export function buildLogoPromptUserPrompt(answers: Record<number, StepAnswer>): string {
+  // Extract logo type from step 12 (logo-type-select stores a string id)
+  const logoTypeId = typeof answers[12] === "string" ? answers[12] : "";
+  const logoTypeNote = logoTypeId
+    ? `\nLOGO TYPE SELECTED: "${logoTypeId}" — strictly respect this logo format in the prompt.`
+    : "";
+
+  return `Generate a professional logo image prompt based on this Angolan business:
+
+${buildContext(answers)}${logoTypeNote}
+
+Respond with ONLY the image generation prompt in English.`;
+}
+
+// ============================================================
+// JSON STRUCTURED BUSINESS PLAN PROMPTS
+// ============================================================
+
+export function buildPlanJSONSystemPrompt(): string {
+  return `You are an elite business plan consultant specialising in the Angolan market. Generate a COMPLETE, professional business plan as a single VALID JSON object. Output ONLY the JSON — no markdown fences, no explanations, no text before or after.
+
+SCHEMA (follow exactly):
+{
+  "cover": {
+    "businessName": "string",
+    "tagline": "string — 1 impactful sentence",
+    "sector": "string",
+    "province": "string",
+    "country": "Angola",
+    "date": "string — e.g. Junho de 2025",
+    "version": "V1.0",
+    "contact": "string or null",
+    "legalForm": "string — recommended legal form in Angola",
+    "confidential": "Confidencial — Uso exclusivo do promotor e parceiros autorizados"
+  },
+  "sections": [
+    {
+      "id": "string — kebab-case",
+      "number": "string — e.g. 1",
+      "title": "string",
+      "blocks": [ ...blocks ],
+      "subsections": [
+        { "title": "string", "blocks": [ ...blocks ] }
+      ]
+    }
+  ]
+}
+
+BLOCK TYPES (use any combination per section):
+{"type":"text","content":"paragraph — plain text only, NO markdown, NO | characters"}
+{"type":"bullets","items":["item 1","item 2"]}
+{"type":"numbered","items":["step 1","step 2"]}
+{"type":"table","title":"optional","headers":["Col1","Col2","Col3"],"rows":[["r1c1","r1c2","r1c3"]]}
+{"type":"swot","strengths":["..."],"weaknesses":["..."],"opportunities":["..."],"threats":["..."]}
+{"type":"organogram","root":{"title":"CEO / Fundador","subtitle":"nome/cargo","children":[{"title":"Dir. Técnico","subtitle":"Cargo","children":[]}]}}
+{"type":"metrics","items":[{"label":"Investimento Total","value":"96.580.000","unit":"Kz","desc":"Capital necessário no arranque"}]}
+{"type":"highlight","label":"Label","value":"Valor importante","sublabel":"nota extra","color":"blue|green|amber|red|slate"}
+{"type":"timeline","phases":[{"period":"Mês 1–3","title":"Arranque","tasks":["tarefa 1","tarefa 2"]}]}
+
+ABSOLUTE RULES:
+- Write ENTIRELY in Portuguese (Angola)
+- NEVER use | characters in text/bullets/numbered blocks (only inside table rows)
+- NEVER use ASCII art, ASCII boxes, or ASCII diagrams anywhere
+- NEVER use markdown syntax (**, ##, --, >, etc.) inside text content
+- Financial values in AOA (Kz) and USD — infer realistic numbers within the stated ranges
+- Every section must be SUBSTANTIAL (not template placeholders)
+- The organogram must reflect the actual team capacity declared
+
+REQUIRED SECTIONS (generate ALL 13, in this order):
+1. SUMÁRIO EXECUTIVO — text + bullets + metrics (key financial highlights)
+2. DESCRIÇÃO DO NEGÓCIO — text + bullets + highlight boxes (visão/missão/valores)
+3. ANÁLISE DE MERCADO — text + metrics (TAM/SAM/SOM) + swot + table (competitors)
+4. PRODUTOS E SERVIÇOS — text + table (pricing) + bullets
+5. MARKETING E VENDAS — text + bullets + table (monthly targets)
+6. PLANO OPERACIONAL — text + bullets + table (suppliers/logistics)
+7. ESTRUTURA DA EQUIPA — text + organogram + table (roles and salaries)
+8. PLANO FINANCEIRO — metrics (key numbers) + table (investment) + table (cashflow 12m) + table (P&L) + highlight (break-even) + highlight (funding gap)
+9. CRONOGRAMA DE IMPLEMENTAÇÃO — timeline (18 months in 3 phases)
+10. ANÁLISE DE RISCOS — table (risk | probability | impact | mitigation)
+11. LEGALIZAÇÃO EM ANGOLA — numbered + table (costs)
+12. BRANDING E IDENTIDADE — text + bullets
+13. GUIA DE LANÇAMENTO 90 DIAS — timeline (3 phases: month 1, 2, 3) + table (90-day targets)`;
+}
+
+export function buildPlanJSONUserPrompt(answers: Record<number, StepAnswer>): string {
+  return `Generate the complete JSON business plan for this Angolan entrepreneur:
+
+${buildContext(answers)}
+
+CRITICAL INSTRUCTIONS:
+- Cross-reference the province with the sector to infer realistic market conditions
+- Use the stated Cost Range and Price Range to build ALL financial tables with actual numbers
+- The Capital Available vs Investment Required gap must be explicit in section 8
+- Cite real Angolan institutions: BDA, FDES, FACRA, BAI, BFA, GUE, AGT, INSS
+- Dates: use current year 2025/2026
+- Currency: Kwanza (Kz / AOA) primarily, USD as reference
+
+Respond with ONLY the JSON object. No text before or after.`;
+}
+
 export function buildNamesSystemPrompt(): string {
   return `Você é um especialista em branding angolano e naming corporativo. Gere nomes criativos e memoráveis para negócios criados em Angola, adaptados à província ou de forma nacional.
 
