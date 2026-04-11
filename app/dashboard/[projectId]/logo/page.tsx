@@ -83,7 +83,7 @@ export default function LogoViewer() {
         <rect width="100%" height="100%" filter="url(#noiseFilter)" />
       </svg>
 
-      <main className="relative z-10 max-w-3xl mx-auto px-6 md:px-8 py-12">
+      <main className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 md:px-8 py-8 md:py-12">
         {/* Header */}
         <div className="flex items-center justify-between mb-10">
           <Link

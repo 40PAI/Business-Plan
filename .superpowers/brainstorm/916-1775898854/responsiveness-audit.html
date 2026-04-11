@@ -1,0 +1,97 @@
+<h2>Auditoria de Responsividade — PlanAI</h2>
+<p class="subtitle">60–70% responsivo actualmente. As áreas críticas a corrigir estão destacadas abaixo.</p>
+
+<div class="section">
+  <h3>📱 Estado actual por ecrã</h3>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px;">
+    <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:28px;margin-bottom:8px;">📱</div>
+      <div style="font-weight:700;color:#dc2626;font-size:14px;">Mobile</div>
+      <div style="font-size:11px;color:#64748b;margin-top:4px;">&lt; 640px</div>
+      <div style="margin-top:8px;font-size:12px;color:#dc2626;font-weight:600;">⚠ Problemas sérios</div>
+      <ul style="text-align:left;font-size:11px;color:#64748b;margin-top:8px;padding-left:16px;">
+        <li>Dropdowns cortados</li>
+        <li>Grids fixos a 2 colunas</li>
+        <li>Wizard mal formatado</li>
+        <li>Cards sobrepostos</li>
+      </ul>
+    </div>
+    <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:28px;margin-bottom:8px;">📟</div>
+      <div style="font-weight:700;color:#d97706;font-size:14px;">Tablet</div>
+      <div style="font-size:11px;color:#64748b;margin-top:4px;">640px – 1024px</div>
+      <div style="margin-top:8px;font-size:12px;color:#d97706;font-weight:600;">⚠ Problemas menores</div>
+      <ul style="text-align:left;font-size:11px;color:#64748b;margin-top:8px;padding-left:16px;">
+        <li>Espaçamentos excessivos</li>
+        <li>Alguns layouts cortados</li>
+        <li>Wizard razoável</li>
+      </ul>
+    </div>
+    <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:28px;margin-bottom:8px;">🖥</div>
+      <div style="font-weight:700;color:#16a34a;font-size:14px;">Desktop</div>
+      <div style="font-size:11px;color:#64748b;margin-top:4px;">&gt; 1024px</div>
+      <div style="margin-top:8px;font-size:12px;color:#16a34a;font-weight:600;">✅ Bom</div>
+      <ul style="text-align:left;font-size:11px;color:#64748b;margin-top:8px;padding-left:16px;">
+        <li>Páginas principais OK</li>
+        <li>Dashboard OK</li>
+        <li>Plan viewer OK</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🔴 Problemas críticos (mobile)</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
+    <div style="background:#1e293b;border-radius:10px;padding:14px;">
+      <div style="color:#f87171;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Wizard — Contacto</div>
+      <div style="color:#94a3b8;font-size:11px;margin-bottom:6px;">Dropdown de país tem largura fixa (w-64 = 256px) que ultrapassa o ecrã em mobile</div>
+      <div style="background:#0f172a;border-radius:6px;padding:8px;font-family:monospace;font-size:10px;color:#f87171;">w-64 → overflow em &lt;320px</div>
+    </div>
+    <div style="background:#1e293b;border-radius:10px;padding:14px;">
+      <div style="color:#f87171;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Gerador de Nomes</div>
+      <div style="color:#94a3b8;font-size:11px;margin-bottom:6px;">Grid sempre a 2 colunas — em mobile fica espremido</div>
+      <div style="background:#0f172a;border-radius:6px;padding:8px;font-family:monospace;font-size:10px;color:#f87171;">grid-cols-2 → sem breakpoint mobile</div>
+    </div>
+    <div style="background:#1e293b;border-radius:10px;padding:14px;">
+      <div style="color:#f87171;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Dashboard — Artifact Cards</div>
+      <div style="color:#94a3b8;font-size:11px;margin-bottom:6px;">Cards sem qualquer classe responsiva — padding p-8 fixo</div>
+      <div style="background:#0f172a;border-radius:6px;padding:8px;font-family:monospace;font-size:10px;color:#f87171;">p-8 always → p-4 md:p-8</div>
+    </div>
+    <div style="background:#1e293b;border-radius:10px;padding:14px;">
+      <div style="color:#f87171;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Organograma</div>
+      <div style="color:#94a3b8;font-size:11px;margin-bottom:6px;">Nós com min-width fixo não cabem em mobile — sem scroll horizontal</div>
+      <div style="background:#0f172a;border-radius:6px;padding:8px;font-family:monospace;font-size:10px;color:#f87171;">min-w-[140px] sem overflow-x</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Qual é a prioridade para começar?</h3>
+  <p class="subtitle">Escolhe por onde quer que comecemos a corrigir</p>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="wizard" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Wizard primeiro</h3>
+      <p>Corrigir o fluxo de criação do plano — onde o utilizador passa mais tempo. Chip-select, name-generator, contact-input, numeric-input.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="dashboard" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Dashboard primeiro</h3>
+      <p>Corrigir os cards de projecto, artifact-cards, plan viewer, pitch viewer — o que o utilizador vê após gerar.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="tudo" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Tudo de uma vez</h3>
+      <p>Fazer uma passagem completa em todos os componentes — wizard + dashboard + landing — numa única implementação.</p>
+    </div>
+  </div>
+</div>

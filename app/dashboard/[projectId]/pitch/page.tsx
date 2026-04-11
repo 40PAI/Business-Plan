@@ -108,32 +108,34 @@ export default function PitchViewer() {
         <rect width="100%" height="100%" filter="url(#noiseFilter)" />
       </svg>
 
-      <main className="relative z-10 max-w-4xl mx-auto px-6 md:px-8 py-12">
+      <main className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 md:px-8 py-8 md:py-12">
         {/* Header */}
-        <div className="flex items-center justify-between mb-10">
+        <div className="flex items-center justify-between gap-3 mb-8 md:mb-10">
           <Link
             href={`/dashboard/${projectId}`}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0"
           >
             <ArrowLeft size={16} />
-            Voltar ao projecto
+            <span className="hidden sm:inline">Voltar ao projecto</span>
           </Link>
           <div className="flex items-center gap-2">
             <button
               onClick={handleExportDOC}
               disabled={exportingDoc || slides.length === 0}
-              className="flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-accent-foreground/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 sm:px-4 text-sm text-muted-foreground hover:text-foreground hover:border-accent-foreground/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {exportingDoc ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-              {exportingDoc ? "A exportar..." : "DOC"}
+              <span className="hidden sm:inline">{exportingDoc ? "A exportar..." : "DOC"}</span>
+              <span className="sm:hidden">DOC</span>
             </button>
             <button
               onClick={handleExportPDF}
               disabled={exporting || slides.length === 0}
-              className="flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-accent-foreground/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 sm:px-4 text-sm text-muted-foreground hover:text-foreground hover:border-accent-foreground/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-              {exporting ? "A exportar..." : "PDF"}
+              <span className="hidden sm:inline">{exporting ? "A exportar..." : "PDF"}</span>
+              <span className="sm:hidden">PDF</span>
             </button>
           </div>
         </div>
@@ -155,7 +157,7 @@ export default function PitchViewer() {
         ) : (
           <>
             {/* Slide viewer */}
-            <div className="bg-secondary/20 backdrop-blur-xl border border-secondary/50 rounded-[2.5rem] p-10 md:p-16 shadow-2xl min-h-[400px] flex flex-col justify-center">
+            <div className="bg-secondary/20 backdrop-blur-xl border border-secondary/50 rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-10 md:p-16 shadow-2xl min-h-[320px] sm:min-h-[400px] flex flex-col justify-center">
               {slide && (
                 <>
                   {/* Slide number */}
@@ -211,14 +213,14 @@ export default function PitchViewer() {
               <button
                 onClick={() => setCurrentSlide(Math.max(0, currentSlide - 1))}
                 disabled={currentSlide === 0}
-                className="flex items-center gap-2 rounded-full border border-border px-5 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-accent-foreground/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 rounded-full border border-border px-3 py-2.5 sm:px-5 sm:py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-accent-foreground/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <ChevronLeft size={16} />
-                Anterior
+                <span className="hidden sm:inline">Anterior</span>
               </button>
 
               {/* Dots */}
-              <div className="flex gap-1.5">
+              <div className="flex flex-wrap gap-1.5 justify-center max-w-[160px] sm:max-w-none">
                 {slides.map((_, i) => (
                   <button
                     key={i}
@@ -237,9 +239,9 @@ export default function PitchViewer() {
                   setCurrentSlide(Math.min(total - 1, currentSlide + 1))
                 }
                 disabled={currentSlide === total - 1}
-                className="flex items-center gap-2 rounded-full border border-border px-5 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-accent-foreground/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 rounded-full border border-border px-3 py-2.5 sm:px-5 sm:py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-accent-foreground/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
               >
-                Próximo
+                <span className="hidden sm:inline">Próximo</span>
                 <ChevronRight size={16} />
               </button>
             </div>

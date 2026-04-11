@@ -78,42 +78,25 @@ export default function ProjectPage() {
         throw new Error(errData.error || `HTTP ${res.status}`);
       }
 
-      const contentType = res.headers.get("content-type") || "";
-      const planFormat = res.headers.get("x-plan-format");
-
-      if (contentType.includes("application/json")) {
-        // New structured JSON format
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        proj.artifacts.plan = {
-          status: "done",
-          content: JSON.stringify(data.plan),
-        };
-        updateProject(proj);
-      } else {
-        // Fallback: streaming markdown
-        const reader = res.body!.getReader();
-        const decoder = new TextDecoder();
-        let content = "";
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          const clean = chunk
-            .replace(/: ?OPENROUTER PROCESSING\n?/g, "")
-            .replace(/OPENROUTER PROCESSING\n?/g, "");
-          if (clean) {
-            content += clean;
-            proj.artifacts.plan = { status: "generating", content };
-            updateProject(proj);
-          }
+      // Always streaming markdown from the server
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let content = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        const clean = chunk
+          .replace(/: ?OPENROUTER PROCESSING\n?/g, "")
+          .replace(/OPENROUTER PROCESSING\n?/g, "");
+        if (clean) {
+          content += clean;
+          proj.artifacts.plan = { status: "generating", content };
+          updateProject(proj);
         }
-        // Mark as markdown format so viewer knows
-        proj.artifacts.plan = { status: "done", content: `__MARKDOWN__\n${content}` };
-        updateProject(proj);
       }
-      // Suppress unused variable warning
-      void planFormat;
+      proj.artifacts.plan = { status: "done", content: `__MARKDOWN__\n${content}` };
+      updateProject(proj);
     } catch (error) {
       proj.artifacts.plan = {
         status: "error",
@@ -174,10 +157,39 @@ export default function ProjectPage() {
         throw new Error(errData.error || `HTTP ${res.status}`);
       }
 
-      const data = await res.json();
+      // Stream the response and accumulate content (avoids Vercel timeout)
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullContent += decoder.decode(value, { stream: true });
+      }
+
+      // Parse slides JSON from accumulated content
+      let slides = null;
+      try {
+        const cleaned = fullContent
+          .replace(/```json\s*/gi, "")
+          .replace(/```\s*/g, "")
+          .trim();
+        slides = JSON.parse(cleaned);
+      } catch {
+        try {
+          const match = fullContent.match(/\[[\s\S]*\]/);
+          if (match) {
+            slides = JSON.parse(match[0]);
+          }
+        } catch {
+          slides = null;
+        }
+      }
+
       proj.artifacts.pitch = {
         status: "done",
-        content: data.slides ? JSON.stringify(data.slides) : (data.raw || ""),
+        content: Array.isArray(slides) ? JSON.stringify(slides) : fullContent,
       };
       updateProject(proj);
     } catch (error) {
@@ -275,7 +287,7 @@ export default function ProjectPage() {
         <div className="absolute top-0 right-0 w-[60vw] h-[60vh] bg-chart-1/10 blur-[120px] rounded-full mix-blend-screen translate-x-1/4 -translate-y-1/4" />
       </div>
 
-      <main className="relative z-10 max-w-4xl mx-auto px-6 md:px-8 py-12">
+      <main className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 md:px-8 py-8 md:py-12">
         {/* Header */}
         <div className="project-reveal flex items-center gap-4 mb-4">
           <Link

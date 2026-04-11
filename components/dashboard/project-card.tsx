@@ -45,7 +45,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
 
   return (
     <Link href={`/dashboard/${project.id}`}>
-      <div className="group rounded-[2rem] bg-secondary/20 backdrop-blur-md border border-border/50 p-8 hover:border-accent-foreground/20 hover:bg-secondary/30 transition-all duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] cursor-pointer">
+      <div className="group rounded-[2rem] bg-secondary/20 backdrop-blur-md border border-border/50 p-4 sm:p-6 md:p-8 hover:border-accent-foreground/20 hover:bg-secondary/30 transition-all duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] cursor-pointer">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div>
@@ -58,7 +58,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
           </div>
           <ArrowRight
             size={20}
-            className="text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all duration-300"
+            className="shrink-0 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all duration-300"
           />
         </div>
 

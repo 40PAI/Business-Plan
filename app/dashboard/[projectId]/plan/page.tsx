@@ -307,7 +307,7 @@ function CoverSection({ cover }: { cover: BusinessPlanData["cover"] }) {
   return (
     <div className="rounded-2xl border border-border bg-card overflow-hidden mb-10">
       {/* Top bar */}
-      <div className="bg-primary px-8 py-4">
+      <div className="bg-primary px-4 sm:px-8 py-3 sm:py-4">
         <p className="text-primary-foreground/70 text-xs font-mono uppercase tracking-[0.2em]">Business Plan</p>
         <h2 className="text-primary-foreground text-2xl md:text-3xl font-bold mt-1">{cover.businessName}</h2>
       </div>
@@ -533,28 +533,30 @@ export default function PlanViewer() {
         <rect width="100%" height="100%" filter="url(#noiseFilter)" />
       </svg>
 
-      <main className="relative z-10 max-w-4xl mx-auto px-6 md:px-8 py-12">
-        <div className="flex items-center justify-between mb-10">
-          <Link href={`/dashboard/${projectId}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+      <main className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 md:px-8 py-8 md:py-12">
+        <div className="flex items-center justify-between gap-3 mb-8 md:mb-10">
+          <Link href={`/dashboard/${projectId}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0">
             <ArrowLeft size={16} />
-            Voltar ao projecto
+            <span className="hidden sm:inline">Voltar ao projecto</span>
           </Link>
           <div className="flex items-center gap-2">
             <button
               onClick={handleExportDOC}
               disabled={exportingDoc || !raw}
-              className="flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 sm:px-4 text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {exportingDoc ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-              {exportingDoc ? "A exportar..." : "DOC"}
+              <span className="hidden sm:inline">{exportingDoc ? "A exportar..." : "DOC"}</span>
+              <span className="sm:hidden">DOC</span>
             </button>
             <button
               onClick={handleExportPDF}
               disabled={exporting || !raw}
-              className="flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 sm:px-4 text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {exporting ? <Loader2 size={14} className="animate-spin" /> : <Printer size={14} />}
-              {exporting ? "A abrir..." : "PDF"}
+              <span className="hidden sm:inline">{exporting ? "A abrir..." : "PDF"}</span>
+              <span className="sm:hidden">PDF</span>
             </button>
           </div>
         </div>

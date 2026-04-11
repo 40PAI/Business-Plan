@@ -71,7 +71,7 @@ export function ChipSelect({ options, mode, maxSelect = 99, value, onChange }: C
               key={option.label}
               type="button"
               onClick={() => handleSelect(option.label)}
-              className={`group relative flex items-center gap-2.5 rounded-full border px-5 py-3 text-left text-sm font-medium transition-all duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] hover:scale-[1.02] whitespace-nowrap ${
+              className={`group relative flex items-center gap-2.5 rounded-full border px-4 py-2.5 sm:px-5 sm:py-3 text-left text-sm font-medium transition-all duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] hover:scale-[1.02] whitespace-normal sm:whitespace-nowrap max-w-full ${
                 active
                   ? "border-primary/60 bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-secondary/60 hover:text-foreground"

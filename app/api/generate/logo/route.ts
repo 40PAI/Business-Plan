@@ -1,5 +1,5 @@
-export const runtime = "edge";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 import { NextRequest } from "next/server";
 import { callOpenRouter } from "@/lib/openrouter";
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     // Step 2: Send prompt to n8n webhook and wait for binary image
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120_000);
+    const timeoutId = setTimeout(() => controller.abort(), 55_000);
 
     let dataUrl: string;
     try {
@@ -50,9 +50,6 @@ export async function POST(req: NextRequest) {
       
       // Step 3: Upload to Supabase Storage
       const publicUrl = await uploadLogo(projectId, buffer, mimeType);
-      
-      // Optional: keep base64 for immediate frontend display (but Supabase is preferred)
-      // dataUrl = `data:${mimeType};base64,${Buffer.from(buffer).toString("base64")}`;
       dataUrl = publicUrl;
     } finally {
       clearTimeout(timeoutId);

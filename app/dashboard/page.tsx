@@ -98,7 +98,7 @@ export default function Dashboard() {
         <div className="absolute bottom-0 left-0 w-[40vw] h-[40vh] bg-secondary/20 blur-[140px] rounded-full mix-blend-screen" />
       </div>
 
-      <main className="relative z-10 max-w-5xl mx-auto px-6 md:px-8 py-12">
+      <main className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-8 md:py-12">
         {/* Header */}
         <div className="dashboard-reveal flex items-center justify-between mb-10">
           <div className="flex items-center gap-3">
@@ -112,11 +112,11 @@ export default function Dashboard() {
           </div>
           <Link
             href="/plan"
-            className="group relative overflow-hidden rounded-full bg-foreground px-6 py-3 text-sm font-medium text-primary-foreground transition-all hover:scale-105 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] duration-500"
+            className="group relative overflow-hidden rounded-full bg-foreground px-4 py-2.5 sm:px-6 sm:py-3 text-sm font-medium text-primary-foreground transition-all hover:scale-105 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] duration-500"
           >
             <span className="relative z-10 flex items-center gap-2">
               <Plus size={16} />
-              Novo Plano
+              <span className="hidden sm:inline">Novo Plano</span>
             </span>
             <div className="absolute inset-0 z-0 bg-accent translate-y-full transition-transform duration-500 group-hover:translate-y-0" />
           </Link>

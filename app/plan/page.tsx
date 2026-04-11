@@ -263,7 +263,7 @@ export default function PlanWizard() {
   return (
     <div
       ref={container}
-      className="relative min-h-screen bg-background text-foreground flex items-center justify-center p-6 selection:bg-accent selection:text-white"
+      className="relative min-h-screen bg-background text-foreground flex items-center justify-center p-3 sm:p-6 selection:bg-accent selection:text-white"
     >
       {/* Noise Overlay */}
       <svg className="pointer-events-none fixed inset-0 z-50 h-full w-full opacity-[0.05]">
@@ -305,7 +305,7 @@ export default function PlanWizard() {
         {/* Form Container */}
         <div
           ref={formRef}
-          className="bg-secondary/20 backdrop-blur-xl border border-secondary/50 rounded-[2.5rem] p-8 md:p-12 shadow-2xl min-h-[400px]"
+          className="bg-secondary/20 backdrop-blur-xl border border-secondary/50 rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-8 md:p-12 shadow-2xl min-h-[400px] overflow-hidden"
         >
           <div className="mb-3 text-sm font-medium text-accent-foreground">
             {step.block}

@@ -22,7 +22,7 @@ export function ArtifactCard({
   preview,
 }: ArtifactCardProps) {
   return (
-    <div className="rounded-[2rem] bg-secondary/20 backdrop-blur-md border border-border/50 p-8 transition-all duration-500">
+    <div className="rounded-[2rem] bg-secondary/20 backdrop-blur-md border border-border/50 p-4 sm:p-6 md:p-8 transition-all duration-500">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="h-12 w-12 rounded-2xl bg-background flex items-center justify-center border border-border">

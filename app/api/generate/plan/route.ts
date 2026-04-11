@@ -3,61 +3,23 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest } from "next/server";
 import { streamOpenRouter } from "@/lib/openrouter";
-import { buildPlanJSONSystemPrompt, buildPlanJSONUserPrompt, buildPlanSystemPrompt, buildPlanUserPrompt } from "@/lib/prompts";
-import { isBusinessPlanData } from "@/lib/plan-schema";
+import { buildPlanSystemPrompt, buildPlanUserPrompt } from "@/lib/prompts";
 
 export async function POST(req: NextRequest) {
   try {
     const { answers } = await req.json();
 
-    // Collect the full streamed response (needed to parse JSON)
+    // Stream directly from AI provider to client — no server-side buffering.
+    // This keeps the connection alive on Vercel because data flows continuously,
+    // avoiding the 10s/30s timeout that kills buffered responses.
     const stream = await streamOpenRouter(
-      buildPlanJSONSystemPrompt(),
-      buildPlanJSONUserPrompt(answers)
-    );
-
-    const reader = stream.getReader();
-    const decoder = new TextDecoder();
-    let fullContent = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      fullContent += decoder.decode(value, { stream: true });
-    }
-
-    // Try to parse as structured JSON
-    const cleaned = fullContent
-      .replace(/```json\s*/gi, "")
-      .replace(/```\s*/g, "")
-      .trim();
-
-    // Find outermost JSON object
-    const start = cleaned.indexOf("{");
-    const end = cleaned.lastIndexOf("}");
-
-    if (start >= 0 && end > start) {
-      try {
-        const planData = JSON.parse(cleaned.slice(start, end + 1));
-        if (isBusinessPlanData(planData)) {
-          return Response.json({ format: "json", plan: planData });
-        }
-      } catch {
-        // Fall through to markdown fallback
-      }
-    }
-
-    // Fallback: regenerate as markdown (old format)
-    console.warn("JSON parse failed, falling back to markdown plan");
-    const markdownStream = await streamOpenRouter(
       buildPlanSystemPrompt(),
       buildPlanUserPrompt(answers)
     );
 
-    return new Response(markdownStream, {
+    return new Response(stream, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
-        "Transfer-Encoding": "chunked",
         "X-Plan-Format": "markdown",
       },
     });
