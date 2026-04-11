@@ -165,7 +165,8 @@ async function makeHuggingFaceRequest(
 
 export async function streamOpenRouter(
   systemPrompt: string,
-  userPrompt: string
+  userPrompt: string,
+  maxTokens = 12000
 ): Promise<ReadableStream<Uint8Array>> {
   const messages = [
     { role: "system", content: systemPrompt },
@@ -178,7 +179,7 @@ export async function streamOpenRouter(
       model: OPENROUTER_MODEL,
       messages,
       stream: true,
-      max_tokens: 40000,
+      max_tokens: maxTokens,
       temperature: 0.7,
     });
 
@@ -193,7 +194,7 @@ export async function streamOpenRouter(
       model: "llama-3.3-70b-versatile",
       messages,
       stream: true,
-      max_tokens: 32000,
+      max_tokens: Math.min(maxTokens, 8000),
       temperature: 0.7,
     });
     return createSSEStream(response);
@@ -356,8 +357,17 @@ function createSSEStream(response: Response): ReadableStream<Uint8Array> {
           for (const line of parts) {
             const trimmed = line.trim();
 
-            // Skip empty lines and SSE comments (": OPENROUTER PROCESSING", etc.)
-            if (trimmed === "" || trimmed.startsWith(":")) continue;
+            // Empty lines: send a space to keep connection alive on Vercel
+            if (trimmed === "") {
+              controller.enqueue(encoder.encode(" "));
+              continue;
+            }
+
+            // SSE comments (e.g. ": OPENROUTER PROCESSING"): send a space keep-alive
+            if (trimmed.startsWith(":")) {
+              controller.enqueue(encoder.encode(" "));
+              continue;
+            }
 
             // Handle SSE data lines
             if (trimmed.startsWith("data: ")) {
@@ -372,6 +382,9 @@ function createSSEStream(response: Response): ReadableStream<Uint8Array> {
                 const content = parsed.choices?.[0]?.delta?.content;
                 if (content) {
                   controller.enqueue(encoder.encode(content));
+                } else {
+                  // Empty content chunk: send keep-alive
+                  controller.enqueue(encoder.encode(" "));
                 }
                 // Check for finish_reason to detect model stopping
                 const finishReason = parsed.choices?.[0]?.finish_reason;
@@ -379,7 +392,8 @@ function createSSEStream(response: Response): ReadableStream<Uint8Array> {
                   console.warn("Stream finished with reason:", finishReason);
                 }
               } catch {
-                // Skip malformed JSON chunks
+                // Malformed JSON: send keep-alive to maintain connection
+                controller.enqueue(encoder.encode(" "));
               }
               continue;
             }
@@ -392,6 +406,9 @@ function createSSEStream(response: Response): ReadableStream<Uint8Array> {
               !trimmed.startsWith("event:")
             ) {
               controller.enqueue(encoder.encode(trimmed + "\n"));
+            } else {
+              // OpenRouter metadata: send keep-alive
+              controller.enqueue(encoder.encode(" "));
             }
           }
         }

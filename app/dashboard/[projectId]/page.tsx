@@ -82,17 +82,29 @@ export default function ProjectPage() {
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
       let content = "";
+      let lastSaveTime = 0;
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
         const clean = chunk
           .replace(/: ?OPENROUTER PROCESSING\n?/g, "")
-          .replace(/OPENROUTER PROCESSING\n?/g, "");
-        if (clean) {
+          .replace(/OPENROUTER PROCESSING\n?/g, "")
+          .replace(/^ +/gm, (match, offset) => offset === 0 && match === chunk ? "" : match);
+        // Skip keep-alive spaces (single spaces or only whitespace chunks)
+        const trimmed = clean.replace(/ {2,}/g, " ").trim();
+        if (trimmed) {
           content += clean;
           proj.artifacts.plan = { status: "generating", content };
-          updateProject(proj);
+          // Debounce: only update React state + Supabase every 1.5s to avoid flooding
+          const now = Date.now();
+          if (now - lastSaveTime > 1500) {
+            lastSaveTime = now;
+            updateProject(proj);
+          } else {
+            // Still update React state for UI responsiveness
+            setProject(prev => prev ? { ...prev, artifacts: { ...prev.artifacts, plan: { ...proj.artifacts.plan } } } : null);
+          }
         }
       }
       proj.artifacts.plan = { status: "done", content: `__MARKDOWN__\n${content}` };
