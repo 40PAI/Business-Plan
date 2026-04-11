@@ -141,17 +141,49 @@ Tácticas prontas a usar para os meses 1, 2 e 3 adaptadas aos meios financeiros 
 NOTA IMPORTANTE: O plano deve cruzar o que foi dito na fase do negócio + sector + estado financeiro, criando uma sinergia 100% autêntica. Nunca produzas output que cheire a um gerador de templates vazio. A precisão local em Kwanzas, leis e geografia angolana constrói a credibilidade inteira deste documento.`;
 }
 
-export function buildPlanUserPrompt(answers: Record<number, StepAnswer>): string {
-  return `Gere um Business Plan COMPLETO e EXTREMAMENTE DETALHADO (14 secções) com base num profundo processamento da entrevista do utilizador:
+export function buildPlanUserPromptChunk(answers: Record<number, StepAnswer>, partIndex: number): string {
+  const parts = [
+    // Part 0
+    `Gere APENAS as secções 0, 1 e 2 do Business Plan com profundidade empresarial extrema, fundamentado em factos reias da Angola atual:
+# 0. CAPA
+# 1. SUMÁRIO EXECUTIVO
+# 2. DESCRIÇÃO DO NEGÓCIO`,
+    
+    // Part 1
+    `Gere APENAS as secções 3 e 4 do Business Plan com profundidade empresarial extrema:
+# 3. ANÁLISE DE MERCADO
+# 4. PRODUTOS E SERVIÇOS`,
+
+    // Part 2
+    `Gere APENAS as secções 5 e 6 do Business Plan com profundidade empresarial extrema:
+# 5. MARKETING E VENDAS
+# 6. PLANO OPERACIONAL`,
+
+    // Part 3
+    `Gere APENAS as secções 7, 8 e 9 do Business Plan com profundidade empresarial extrema:
+# 7. ESTRUTURA DA EQUIPA
+# 8. PLANO FINANCEIRO (Muito detalhado, não omitas linhas)
+# 9. CRONOGRAMA DE IMPLEMENTAÇÃO`,
+
+    // Part 4
+    `Gere APENAS as secções 10, 11, 12 e 13 do Business Plan com profundidade empresarial extrema:
+# 10. ANÁLISE DE RISCOS
+# 11. LEGALIZAÇÃO EM ANGOLA (Passos no GUE/AGT locais)
+# 12. BRANDING E IDENTIDADE
+# 13. GUIA DE LANÇAMENTO (90 DIAS)`
+  ];
+
+  return `CONTEXTO DO NEGÓCIO DO UTILIZADOR A RESPEITAR ESTRITAMENTE:
 
 ${buildContext(answers)}
 
-INSTRUÇÕES ESPECIAIS:
-- Cruza a localização geográfica com o sector para inferir viabilidade (ex: não sugeres entregas de uber num município longe dos centros urbanos maduros).
-- O intervalo do Custo Mensal e do Preço Médio ditam a matemática que vais construir nos quadros financeiros.
-- Cita marcos temporais em anos actuais, usa a moeda Kwanza (AOA, Kz).
-- A profundidade importa. Adiciona texto que comprove ao leitor que a IA ou estrategista o entendeu completamente e contextualizou para Angola.
-- Retorna markdown e tabelas sem rodeios iniciais.`;
+INSTRUÇÃO PRINCIPAL:
+${parts[partIndex]}
+
+REGRAS:
+- Cita os dados do utilizador. O intervalo de Custo e Preço ditam toda a matemática que vais inventar.
+- Usa Moeda Kwanza (AOA).
+- Retorna APENAS o bloco de Markdown exigido, sem responder "Aqui está a continuação" nem introduções verbosas.`;
 }
 
 export function buildPitchSystemPrompt(): string {
