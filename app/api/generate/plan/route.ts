@@ -2,50 +2,39 @@ export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 import { NextRequest } from "next/server";
-import { streamOpenRouter } from "@/lib/openrouter";
-import { buildPlanSystemPrompt, buildPlanUserPromptChunk } from "@/lib/prompts";
+import { callOpenRouter } from "@/lib/openrouter";
+import { buildPlanJSONSystemPrompt, buildPlanJSONUserPrompt } from "@/lib/prompts";
 
 export async function POST(req: NextRequest) {
   try {
     const { answers } = await req.json();
 
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          const sys = buildPlanSystemPrompt();
+    // Single blocking call — returns structured JSON instead of 5 streaming markdown chunks.
+    // This eliminates duplication, reduces tokens, and enables the rich JSON renderer.
+    const raw = await callOpenRouter(
+      buildPlanJSONSystemPrompt(),
+      buildPlanJSONUserPrompt(answers),
+      14000
+    );
 
-          // 5 sequential chunks — each covers a group of sections.
-          for (let i = 0; i < 5; i++) {
-            const userPrompt = buildPlanUserPromptChunk(answers, i);
-            const chunkStream = await streamOpenRouter(sys, userPrompt, 8000);
-            const reader = chunkStream.getReader();
+    // Validate and extract the JSON object from the response
+    let jsonContent = raw.trim();
 
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              controller.enqueue(value);
-            }
+    // Strip markdown code fences if the model wrapped the JSON
+    jsonContent = jsonContent
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```\s*$/, "")
+      .trim();
 
-            // Section separator between chunks
-            if (i < 4) {
-              controller.enqueue(new TextEncoder().encode("\n\n---\n\n"));
-            }
-          }
+    // Confirm it at least starts with { — if not, try to extract
+    if (!jsonContent.startsWith("{")) {
+      const match = jsonContent.match(/\{[\s\S]*\}/);
+      if (match) jsonContent = match[0];
+    }
 
-          controller.close();
-        } catch (error) {
-          console.error("Plan sequence error:", error);
-          const msg = error instanceof Error ? error.message : "Erro na sequência";
-          controller.enqueue(new TextEncoder().encode(`\n\nErro interno: ${msg}`));
-          controller.close();
-        }
-      }
-    });
-
-    return new Response(stream, {
+    return new Response(jsonContent, {
       headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "X-Plan-Format": "markdown",
+        "Content-Type": "application/json; charset=utf-8",
       },
     });
   } catch (error) {

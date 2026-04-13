@@ -273,6 +273,8 @@ Respond with ONLY the image generation prompt in English.`;
 export function buildPlanJSONSystemPrompt(): string {
   return `You are an elite business plan consultant specialising in the Angolan market. Generate a COMPLETE, professional business plan as a single VALID JSON object. Output ONLY the JSON — no markdown fences, no explanations, no text before or after.
 
+TOKEN BUDGET: Keep the total JSON output under 12000 tokens. Be concise and data-driven. Each text block: 2–3 sentences max. Tables: max 7 rows. Bullets: max 6 items. No filler text, no repetition, no verbose descriptions.
+
 SCHEMA (follow exactly):
 {
   "cover": {
@@ -281,7 +283,7 @@ SCHEMA (follow exactly):
     "sector": "string",
     "province": "string",
     "country": "Angola",
-    "date": "string — e.g. Junho de 2025",
+    "date": "string — e.g. Junho de 2026",
     "version": "V1.0",
     "contact": "string or null",
     "legalForm": "string — recommended legal form in Angola",
@@ -317,23 +319,24 @@ ABSOLUTE RULES:
 - NEVER use ASCII art, ASCII boxes, or ASCII diagrams anywhere
 - NEVER use markdown syntax (**, ##, --, >, etc.) inside text content
 - Financial values in AOA (Kz) and USD — infer realistic numbers within the stated ranges
-- Every section must be SUBSTANTIAL (not template placeholders)
 - The organogram must reflect the actual team capacity declared
+- Do NOT repeat the same information across sections
+- Prefer tables and metrics blocks over long prose paragraphs
 
 REQUIRED SECTIONS (generate ALL 13, in this order):
-1. SUMÁRIO EXECUTIVO — text + bullets + metrics (key financial highlights)
-2. DESCRIÇÃO DO NEGÓCIO — text + bullets + highlight boxes (visão/missão/valores)
-3. ANÁLISE DE MERCADO — text + metrics (TAM/SAM/SOM) + swot + table (competitors)
-4. PRODUTOS E SERVIÇOS — text + table (pricing) + bullets
-5. MARKETING E VENDAS — text + bullets + table (monthly targets)
-6. PLANO OPERACIONAL — text + bullets + table (suppliers/logistics)
-7. ESTRUTURA DA EQUIPA — text + organogram + table (roles and salaries)
-8. PLANO FINANCEIRO — metrics (key numbers) + table (investment) + table (cashflow 12m) + table (P&L) + highlight (break-even) + highlight (funding gap)
-9. CRONOGRAMA DE IMPLEMENTAÇÃO — timeline (18 months in 3 phases)
-10. ANÁLISE DE RISCOS — table (risk | probability | impact | mitigation)
-11. LEGALIZAÇÃO EM ANGOLA — numbered + table (costs)
-12. BRANDING E IDENTIDADE — text + bullets
-13. GUIA DE LANÇAMENTO 90 DIAS — timeline (3 phases: month 1, 2, 3) + table (90-day targets)`;
+1. SUMÁRIO EXECUTIVO — text (3 sentences) + bullets (5 key points) + metrics (4 financial highlights)
+2. DESCRIÇÃO DO NEGÓCIO — text + bullets (visão/missão) + highlight boxes (3 valores)
+3. ANÁLISE DE MERCADO — metrics (TAM/SAM/SOM) + swot + table (3–5 competitors)
+4. PRODUTOS E SERVIÇOS — text + table (products/pricing) + bullets (value props)
+5. MARKETING E VENDAS — text + bullets (channels/tactics) + table (monthly revenue targets, 6 months)
+6. PLANO OPERACIONAL — text + table (key suppliers/logistics)
+7. ESTRUTURA DA EQUIPA — organogram + table (roles, salaries in Kz)
+8. PLANO FINANCEIRO — metrics (4 key numbers) + table (startup investment) + table (cashflow 12m, quarterly) + highlight (break-even) + highlight (funding gap)
+9. CRONOGRAMA DE IMPLEMENTAÇÃO — timeline (3 phases: months 1–3, 4–9, 10–18)
+10. ANÁLISE DE RISCOS — table (5 risks: risk, probability, impact, mitigation)
+11. LEGALIZAÇÃO EM ANGOLA — numbered (steps at GUE/AGT) + table (costs and taxes)
+12. BRANDING E IDENTIDADE — text + bullets (visual and digital identity)
+13. GUIA DE LANÇAMENTO 90 DIAS — timeline (3 months) + table (monthly targets)`;
 }
 
 export function buildPlanJSONUserPrompt(answers: Record<number, StepAnswer>): string {
@@ -346,8 +349,9 @@ CRITICAL INSTRUCTIONS:
 - Use the stated Cost Range and Price Range to build ALL financial tables with actual numbers
 - The Capital Available vs Investment Required gap must be explicit in section 8
 - Cite real Angolan institutions: BDA, FDES, FACRA, BAI, BFA, GUE, AGT, INSS
-- Dates: use current year 2025/2026
+- Dates: use current year 2026
 - Currency: Kwanza (Kz / AOA) primarily, USD as reference
+- Stay within the 12000-token budget — be concise, avoid repetition
 
 Respond with ONLY the JSON object. No text before or after.`;
 }

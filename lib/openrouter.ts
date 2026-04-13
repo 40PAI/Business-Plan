@@ -274,7 +274,7 @@ export async function callOpenRouter(
       const response = await makeOpenRouterRequest({
         model,
         messages,
-        max_tokens: Math.min(maxTokens, 8192),
+        max_tokens: Math.min(maxTokens, 16000),
         temperature: 0.8,
       });
       const data = await response.json();

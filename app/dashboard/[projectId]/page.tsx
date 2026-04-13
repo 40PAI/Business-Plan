@@ -152,32 +152,19 @@ export default function ProjectPage() {
         throw new Error(errData.error || `HTTP ${res.status}`);
       }
 
-      // Always streaming markdown from the server
-      const reader = res.body!.getReader();
-      const decoder = new TextDecoder();
-      let content = "";
-      let lastSaveTime = 0;
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const clean = chunk
-          .replace(/: ?OPENROUTER PROCESSING\n?/g, "")
-          .replace(/OPENROUTER PROCESSING\n?/g, "");
-        const trimmed = clean.replace(/ {2,}/g, " ").trim();
-        if (trimmed) {
-          content += clean;
-          proj.artifacts.plan = { status: "generating", content };
-          const now = Date.now();
-          if (now - lastSaveTime > 1500) {
-            lastSaveTime = now;
-            updateProject(proj);
-          } else {
-            setProject((prev: Project | null) => prev ? { ...prev, artifacts: { ...prev.artifacts, plan: { ...proj.artifacts.plan } } } : null);
-          }
-        }
+      // Plan now returns a single JSON object (not a stream).
+      // Store raw JSON — the plan viewer will detect and use JSONPlanRenderer.
+      const text = await res.text();
+      let content = text.trim();
+
+      // Verify it's valid JSON; fall back to markdown mode if not.
+      try {
+        JSON.parse(content);
+      } catch {
+        content = `__MARKDOWN__\n${content}`;
       }
-      proj.artifacts.plan = { status: "done", content: `__MARKDOWN__\n${content}` };
+
+      proj.artifacts.plan = { status: "done", content };
       updateProject(proj);
     } catch (error) {
       proj.artifacts.plan = {
@@ -382,10 +369,22 @@ export default function ProjectPage() {
   if (!project) return null;
 
   const rawPlanContent = project.artifacts.plan.content || "";
-  const planPreviewText = rawPlanContent.startsWith("__MARKDOWN__\n")
-    ? rawPlanContent.slice("__MARKDOWN__\n".length)
-    : rawPlanContent;
-  const planPreview = planPreviewText ? planPreviewText.replace(/^#+\s*/gm, "").replace(/\*\*/g, "").slice(0, 150) : undefined;
+  let planPreview: string | undefined;
+  if (rawPlanContent) {
+    if (rawPlanContent.startsWith("__MARKDOWN__\n")) {
+      planPreview = rawPlanContent.slice("__MARKDOWN__\n".length).replace(/^#+\s*/gm, "").replace(/\*\*/g, "").slice(0, 150);
+    } else {
+      try {
+        const parsed = JSON.parse(rawPlanContent);
+        // Extract first text block from first section for preview
+        const firstSection = parsed.sections?.[0];
+        const firstTextBlock = firstSection?.blocks?.find((b: { type: string }) => b.type === "text");
+        planPreview = firstTextBlock?.content?.slice(0, 150) ?? parsed.cover?.tagline?.slice(0, 150);
+      } catch {
+        planPreview = rawPlanContent.slice(0, 150);
+      }
+    }
+  }
 
   return (
     <div
