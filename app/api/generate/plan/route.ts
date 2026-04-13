@@ -1,4 +1,4 @@
-export const runtime = "edge";
+export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 import { NextRequest } from "next/server";
@@ -13,28 +13,29 @@ export async function POST(req: NextRequest) {
       async start(controller) {
         try {
           const sys = buildPlanSystemPrompt();
-          
-          // Loop exactly 5 times for the 5 chunks requested
+
+          // 5 sequential chunks — each covers a group of sections.
+          // maxTokens set to 4000 to stay within free-tier model limits.
           for (let i = 0; i < 5; i++) {
             const userPrompt = buildPlanUserPromptChunk(answers, i);
-            const chunkStream = await streamOpenRouter(sys, userPrompt, 8000);
+            const chunkStream = await streamOpenRouter(sys, userPrompt, 4000);
             const reader = chunkStream.getReader();
-            
+
             while (true) {
               const { done, value } = await reader.read();
               if (done) break;
               controller.enqueue(value);
             }
-            
-            // Add spacing between chunks
+
+            // Section separator between chunks
             if (i < 4) {
-              controller.enqueue(new TextEncoder().encode("\n\n"));
+              controller.enqueue(new TextEncoder().encode("\n\n---\n\n"));
             }
           }
-          
+
           controller.close();
         } catch (error) {
-          console.error("Sequence error:", error);
+          console.error("Plan sequence error:", error);
           const msg = error instanceof Error ? error.message : "Erro na sequência";
           controller.enqueue(new TextEncoder().encode(`\n\nErro interno: ${msg}`));
           controller.close();
