@@ -86,15 +86,15 @@ export async function saveProject(project: Project): Promise<void> {
   const { error } = await supabase.from("projects").upsert(dbData);
 
   if (error) {
-    console.error("Error saving project:", error);
-    throw error;
+    console.error("Error saving project:", error.message, error.details, error.hint, error.code);
+    throw new Error(`saveProject failed: ${error.message} (code: ${error.code})`);
   }
 }
 
 export async function deleteProject(id: string): Promise<void> {
   const { error } = await supabase.from("projects").delete().eq("id", id);
   if (error) {
-    console.error("Error deleting project:", error);
+    console.error("Error deleting project:", error.message, error.code);
     throw error;
   }
 }
