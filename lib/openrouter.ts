@@ -173,16 +173,16 @@ export async function streamOpenRouter(
     { role: "user", content: userPrompt },
   ];
 
-  // Try models via OpenRouter — paid first, then free-tier fallbacks
+  // Best models ordered by quality — all require a funded OpenRouter key
   const orModels = [
-    "anthropic/claude-3.5-haiku",
-    "anthropic/claude-3-haiku",
-    "google/gemini-2.0-flash-001",
-    "google/gemini-flash-1.5-8b",
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "meta-llama/llama-3.1-8b-instruct:free",
-    "google/gemini-2.0-flash-exp:free",
-    "mistralai/mistral-7b-instruct:free",
+    "anthropic/claude-sonnet-4-5",          // Best: Claude Sonnet 4.5 (latest)
+    "anthropic/claude-3.7-sonnet",           // Claude 3.7 Sonnet — strong reasoning
+    "anthropic/claude-3.5-sonnet-20241022",  // Claude 3.5 Sonnet (stable)
+    "google/gemini-2.5-pro-preview",         // Gemini 2.5 Pro — excellent for long docs
+    "google/gemini-2.0-flash-001",           // Gemini 2.0 Flash — fast & capable
+    "anthropic/claude-3.5-haiku",            // Fast + affordable Haiku
+    "meta-llama/llama-3.3-70b-instruct",     // Strong open-source fallback
+    "meta-llama/llama-3.1-8b-instruct:free", // Free-tier last resort
   ];
 
   for (const model of orModels) {
@@ -258,14 +258,14 @@ export async function callOpenRouter(
   ];
 
   const orModels = [
-    "anthropic/claude-3.5-haiku",
-    "anthropic/claude-3-haiku",
-    "google/gemini-2.0-flash-001",
-    "google/gemini-flash-1.5-8b",
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "meta-llama/llama-3.1-8b-instruct:free",
-    "google/gemini-2.0-flash-exp:free",
-    "mistralai/mistral-7b-instruct:free",
+    "anthropic/claude-sonnet-4-5",          // Best: Claude Sonnet 4.5 (latest)
+    "anthropic/claude-3.7-sonnet",           // Claude 3.7 Sonnet — strong reasoning
+    "anthropic/claude-3.5-sonnet-20241022",  // Claude 3.5 Sonnet (stable)
+    "google/gemini-2.5-pro-preview",         // Gemini 2.5 Pro — excellent for long docs
+    "google/gemini-2.0-flash-001",           // Gemini 2.0 Flash — fast & capable
+    "anthropic/claude-3.5-haiku",            // Fast + affordable Haiku
+    "meta-llama/llama-3.3-70b-instruct",     // Strong open-source fallback
+    "meta-llama/llama-3.1-8b-instruct:free", // Free-tier last resort
   ];
 
   // Try models via OpenRouter sequentially

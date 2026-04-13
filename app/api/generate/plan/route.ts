@@ -15,10 +15,9 @@ export async function POST(req: NextRequest) {
           const sys = buildPlanSystemPrompt();
 
           // 5 sequential chunks — each covers a group of sections.
-          // maxTokens set to 4000 to stay within free-tier model limits.
           for (let i = 0; i < 5; i++) {
             const userPrompt = buildPlanUserPromptChunk(answers, i);
-            const chunkStream = await streamOpenRouter(sys, userPrompt, 4000);
+            const chunkStream = await streamOpenRouter(sys, userPrompt, 8000);
             const reader = chunkStream.getReader();
 
             while (true) {

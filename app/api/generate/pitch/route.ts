@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     const content = await callOpenRouter(
       buildPitchSystemPrompt(),
       buildPitchUserPrompt(answers),
-      4000
+      8000
     );
 
     return new Response(content, {
