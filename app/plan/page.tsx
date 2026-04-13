@@ -227,7 +227,7 @@ export default function PlanWizard() {
       const contactAnswer = answers[13] as { countryCode: string; whatsapp: string; email: string } | undefined;
       const hasWhatsapp = (contactAnswer?.whatsapp?.length ?? 0) >= 6;
       const hasEmail = !!contactAnswer?.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactAnswer.email);
-      const deliveryPreference = hasWhatsapp && hasEmail ? "both" : hasWhatsapp ? "whatsapp" : "email";
+      const deliveryPreference: "both" | "whatsapp" | "email" = hasWhatsapp && hasEmail ? "both" : hasWhatsapp ? "whatsapp" : "email";
       const contact = contactAnswer
         ? {
             countryCode: contactAnswer.countryCode,

@@ -164,36 +164,89 @@ export function generatePlanPDF(businessName: string, content: string | Business
     @media print {
       body { margin: 0; }
       .no-print { display: none !important; }
-      h1 { page-break-before: auto; }
+      section { page-break-inside: avoid; }
       table { page-break-inside: avoid; }
+      .metrics { page-break-inside: avoid; }
     }
-    .cover { text-align:center; padding: 3cm 0 2cm; border-bottom: 2px solid #1e3a8a; margin-bottom: 2cm; }
-    .cover .label { font-size:9pt; letter-spacing:.15em; text-transform:uppercase; color:#64748b; margin-bottom:.5cm; }
+
+    /* ── Typography ── */
     h1 { font-size: 20pt; color: #0f172a; margin: 1.2em 0 .4em; border-bottom: 2px solid #e2e8f0; padding-bottom: .3em; }
-    h2 { font-size: 15pt; color: #1e3a8a; margin: 1em 0 .3em; }
-    h3 { font-size: 13pt; color: #0f172a; margin: .9em 0 .2em; }
+    h2 { font-size: 15pt; color: #1e3a8a; margin: 1.4em 0 .4em; padding-bottom: .2em; border-bottom: 1.5pt solid #dbeafe; }
+    h3 { font-size: 12pt; color: #0f172a; margin: 1em 0 .25em; font-weight: 600; }
     h4 { font-size: 11pt; font-weight: bold; color: #334155; margin: .7em 0 .2em; }
-    p { margin: .4em 0 .5em; line-height: 1.6; }
-    ul, ol { margin: .4em 0 .6em; padding-left: 1.4em; }
-    li { margin: .25em 0; line-height: 1.5; }
-    table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 10pt; }
-    th { background: #1e3a8a; color: white; padding: 7px 10px; text-align: left; font-size: 9pt; }
-    td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; }
-    tr:nth-child(even) td { background: #f8fafc; }
+    p { margin: .35em 0 .5em; line-height: 1.65; }
+    ul, ol { margin: .35em 0 .6em; padding-left: 1.4em; }
+    li { margin: .2em 0; line-height: 1.55; }
+    strong { color: #0f172a; }
     blockquote { border-left: 4px solid #3b82f6; margin: .8em 0; padding: .4em 1em; color: #475569; font-style: italic; background: #f0f9ff; border-radius: 0 6px 6px 0; }
     hr { border: none; border-top: 1px solid #e2e8f0; margin: 1em 0; }
-    pre.ascii { font-family: monospace; font-size: 9pt; background: #f8fafc; border: 1px solid #e2e8f0; padding: .8em; border-radius: 6px; overflow-x: auto; white-space: pre; color: #334155; }
+    pre.ascii { font-family: monospace; font-size: 9pt; background: #f8fafc; border: 1px solid #e2e8f0; padding: .8em; border-radius: 6px; white-space: pre; color: #334155; }
     pre code { display: block; background: #1e293b; color: #e2e8f0; padding: 1em; border-radius: 6px; font-size: 9pt; white-space: pre-wrap; }
-    strong { color: #0f172a; }
+
+    /* ── Tables ── */
+    table { width: 100%; border-collapse: collapse; margin: .8em 0; font-size: 10pt; }
+    th { background: #1e3a8a; color: white; padding: 7px 10px; text-align: left; font-size: 9pt; font-weight: 600; }
+    td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top; line-height: 1.45; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    .table-title { font-size: 8pt; font-weight: bold; text-transform: uppercase; letter-spacing: .06em; color: #64748b; margin-bottom: .3em; }
+
+    /* ── Cover ── */
+    .cover { margin-bottom: 1.5cm; border: 1pt solid #e2e8f0; border-radius: 4pt; overflow: hidden; }
+    .cover-header { background: #1e3a8a; color: white; padding: 1.2cm 1.5cm 1cm; }
+    .cover-header h1 { color: white; border: none; font-size: 22pt; margin: .2cm 0 0; padding: 0; }
+    .cover-label { font-size: 8pt; letter-spacing: .2em; text-transform: uppercase; opacity: .7; }
+    .cover-body { background: white; padding: 1cm 1.5cm; }
+    .tagline { font-style: italic; color: #64748b; font-size: 11pt; margin-bottom: .7cm; padding-bottom: .5cm; border-bottom: 1pt solid #e2e8f0; }
+    .cover-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5cm; margin: .3cm 0 .6cm; }
+    .cg-label { font-size: 7pt; text-transform: uppercase; letter-spacing: .1em; color: #94a3b8; }
+    .cg-value { font-weight: bold; font-size: 10pt; margin-top: .05cm; }
+    .confidential { font-size: 7pt; color: #94a3b8; text-align: center; margin-top: .5cm; padding-top: .3cm; border-top: 1pt solid #f1f5f9; }
+
+    /* ── SWOT ── */
+    .swot { width: 100%; border-collapse: separate; border-spacing: 4pt; margin: .6em 0; }
+    .swot th { font-size: 10pt; font-weight: 700; padding: 8pt 10pt; border-radius: 4pt; }
+    .swot th.s { background: #f0fdf4; color: #15803d; border: 1pt solid #bbf7d0; }
+    .swot th.w { background: #fff1f2; color: #be123c; border: 1pt solid #fecdd3; }
+    .swot td { font-size: 9pt; padding: 8pt 10pt; border-radius: 4pt; line-height: 1.5; vertical-align: top; }
+    .swot td.o { background: #eff6ff; border: 1pt solid #bfdbfe; }
+    .swot td.t { background: #fffbeb; border: 1pt solid #fde68a; }
+
+    /* ── Metrics ── */
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: .4cm; margin: .6em 0 .8em; }
+    .metric { background: #f8fafc; border: 1pt solid #e2e8f0; border-radius: 6pt; padding: .5cm .6cm; }
+    .metric-label { font-size: 7.5pt; color: #64748b; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .1cm; }
+    .metric-value { font-size: 15pt; font-weight: 700; color: #0f172a; line-height: 1.1; }
+    .metric-value span { font-size: 9pt; color: #1d4ed8; font-weight: 400; }
+    .metric-desc { font-size: 7.5pt; color: #94a3b8; margin-top: .15cm; line-height: 1.35; }
+
+    /* ── Highlights ── */
+    .highlight { border-left: 4pt solid; padding: .4cm .8cm; margin: .4em 0 .6em; border-radius: 0 5pt 5pt 0; }
+    .highlight-blue  { background: #eff6ff; border-left-color: #1d4ed8; }
+    .highlight-green { background: #f0fdf4; border-left-color: #15803d; }
+    .highlight-amber { background: #fffbeb; border-left-color: #b45309; }
+    .highlight-red   { background: #fff1f2; border-left-color: #be123c; }
+    .highlight-slate { background: #f8fafc; border-left-color: #334155; }
+    .hl-label { font-size: 7.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; opacity: .65; margin-bottom: .1cm; }
+    .hl-value { font-size: 13pt; font-weight: 700; line-height: 1.2; }
+    .hl-sub   { font-size: 8pt; opacity: .6; margin-top: .1cm; }
+
+    /* ── Timeline ── */
+    .timeline { margin: .6em 0 .8em; }
+    .tl-phase { display: flex; gap: .5cm; margin-bottom: .6cm; align-items: flex-start; }
+    .tl-num { min-width: 22pt; height: 22pt; border-radius: 50%; background: #1e3a8a; color: white; font-weight: 700; font-size: 9pt; text-align: center; line-height: 22pt; flex-shrink: 0; }
+    .tl-body { flex: 1; }
+    .tl-period { display: inline-block; background: #dbeafe; color: #1d4ed8; font-size: 8pt; font-weight: 600; padding: 1pt 6pt; border-radius: 10pt; font-family: monospace; margin-bottom: .15cm; }
+    .tl-title { font-weight: 700; font-size: 10.5pt; display: block; margin-bottom: .2cm; }
+    .tl-body ul { margin: 0; padding-left: 1.2em; }
+    .tl-body li { font-size: 9pt; margin: .1cm 0; color: #475569; }
+
+    /* ── Organogram fallback ── */
+    .org-note { background: #f8fafc; border: 1pt dashed #cbd5e1; padding: .5cm; text-align: center; color: #64748b; font-style: italic; font-size: 9pt; border-radius: 4pt; margin: .5em 0; }
+
+    /* ── Footer & UI ── */
+    section { margin-bottom: 1.2cm; }
     .footer { text-align: center; font-size: 8pt; color: #94a3b8; margin-top: 2em; padding-top: .5em; border-top: 1px solid #e2e8f0; }
     .print-btn { position: fixed; top: 1cm; right: 1cm; background: #1e3a8a; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 12pt; z-index: 999; }
-    
-    /* Cover Grid Styles (for JSON data) */
-    .cover-header { background: #1e3a8a; color: white; padding: 3cm 1cm 1.5cm; }
-    .cover-body { padding: 1.5cm; border: 1pt solid #e2e8f0; border-top: none; }
-    .cover-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1cm; margin-bottom: 1cm; }
-    .cg-label { font-size: 8pt; text-transform: uppercase; color: #94a3b8; }
-    .cg-value { font-weight: bold; }
   </style>
 </head>
 <body>
@@ -287,20 +340,64 @@ export function getPlanDOCBlob(businessName: string, content: string | BusinessP
   <title>${businessName} - Business Plan</title>
   <style>
     body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #1e293b; margin: 2cm 2.5cm; }
-    h1 { font-size: 20pt; color: #0f172a; margin-top: 1.2em; }
-    h2 { font-size: 15pt; color: #1e3a8a; margin-top: 1em; }
-    h3 { font-size: 13pt; color: #0f172a; margin-top: .9em; }
+    h1 { font-size: 20pt; color: #0f172a; margin-top: 1.2em; border-bottom: 1pt solid #e2e8f0; padding-bottom: .2em; }
+    h2 { font-size: 15pt; color: #1e3a8a; margin-top: 1.4em; border-bottom: 1pt solid #dbeafe; padding-bottom: .15em; }
+    h3 { font-size: 12pt; color: #0f172a; margin-top: 1em; font-weight: 600; }
     h4 { font-size: 11pt; font-weight: bold; color: #334155; }
-    table { width: 100%; border-collapse: collapse; margin: 1em 0; }
-    th { background: #1e3a8a; color: white; padding: 6pt 8pt; text-align: left; font-size: 9pt; }
-    td { padding: 5pt 8pt; border-bottom: 1pt solid #e2e8f0; font-size: 10pt; }
+    p { margin: .35em 0 .5em; line-height: 1.6; }
+    ul, ol { margin: .35em 0 .6em; padding-left: 1.4em; }
+    li { margin: .2em 0; line-height: 1.55; }
+    strong { color: #0f172a; }
+    table { width: 100%; border-collapse: collapse; margin: .8em 0; }
+    th { background: #1e3a8a; color: white; padding: 6pt 9pt; text-align: left; font-size: 9pt; }
+    td { padding: 5pt 9pt; border-bottom: 1pt solid #e2e8f0; font-size: 10pt; vertical-align: top; }
     tr:nth-child(even) td { background: #f8fafc; }
+    .table-title { font-size: 8pt; font-weight: bold; text-transform: uppercase; color: #64748b; margin-bottom: .2em; }
     blockquote { border-left: 4pt solid #3b82f6; padding-left: 12pt; color: #64748b; font-style: italic; margin: .5em 0; }
     hr { border: none; border-top: 1pt solid #e2e8f0; margin: 1em 0; }
-    ul, ol { margin: .4em 0; padding-left: 1.4em; }
-    li { margin: .2em 0; }
     pre.ascii { font-family: monospace; font-size: 9pt; }
     pre code { font-family: monospace; font-size: 9pt; }
+    /* Cover */
+    .cover-header { background: #1e3a8a; color: white; padding: 1cm 1.5cm; margin-bottom: 0; }
+    .cover-header h1 { color: white; border: none; }
+    .cover-label { font-size: 8pt; text-transform: uppercase; letter-spacing: .15em; opacity: .7; }
+    .cover-body { border: 1pt solid #e2e8f0; padding: .8cm 1.2cm; margin-bottom: 1em; }
+    .tagline { font-style: italic; color: #64748b; margin-bottom: .5em; padding-bottom: .4em; border-bottom: 1pt solid #e2e8f0; }
+    .cover-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .4cm; }
+    .cg-label { font-size: 7pt; text-transform: uppercase; color: #94a3b8; }
+    .cg-value { font-weight: bold; font-size: 10pt; }
+    .confidential { font-size: 7pt; color: #94a3b8; text-align: center; margin-top: .4em; padding-top: .3em; border-top: 1pt solid #f1f5f9; }
+    /* SWOT */
+    .swot { border-collapse: separate; border-spacing: 3pt; }
+    .swot th.s { background: #f0fdf4; color: #15803d; border: 1pt solid #bbf7d0; font-size: 10pt; padding: 7pt 9pt; }
+    .swot th.w { background: #fff1f2; color: #be123c; border: 1pt solid #fecdd3; font-size: 10pt; padding: 7pt 9pt; }
+    .swot td.o { background: #eff6ff; border: 1pt solid #bfdbfe; font-size: 9pt; padding: 7pt 9pt; vertical-align: top; }
+    .swot td.t { background: #fffbeb; border: 1pt solid #fde68a; font-size: 9pt; padding: 7pt 9pt; vertical-align: top; }
+    /* Metrics */
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: .35cm; margin: .5em 0 .7em; }
+    .metric { background: #f8fafc; border: 1pt solid #e2e8f0; padding: .4cm .5cm; }
+    .metric-label { font-size: 7.5pt; color: #64748b; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .1cm; }
+    .metric-value { font-size: 14pt; font-weight: 700; color: #0f172a; }
+    .metric-value span { font-size: 9pt; color: #1d4ed8; font-weight: 400; }
+    .metric-desc { font-size: 7.5pt; color: #94a3b8; margin-top: .1cm; line-height: 1.35; }
+    /* Highlights */
+    .highlight { border-left: 4pt solid; padding: .35cm .7cm; margin: .4em 0; }
+    .highlight-blue  { background: #eff6ff; border-left-color: #1d4ed8; }
+    .highlight-green { background: #f0fdf4; border-left-color: #15803d; }
+    .highlight-amber { background: #fffbeb; border-left-color: #b45309; }
+    .highlight-red   { background: #fff1f2; border-left-color: #be123c; }
+    .highlight-slate { background: #f8fafc; border-left-color: #334155; }
+    .hl-label { font-size: 7.5pt; font-weight: 700; text-transform: uppercase; opacity: .65; margin-bottom: .1cm; }
+    .hl-value { font-size: 13pt; font-weight: 700; }
+    .hl-sub   { font-size: 8pt; opacity: .6; margin-top: .1cm; }
+    /* Timeline */
+    .timeline { margin: .5em 0 .7em; }
+    .tl-phase { margin-bottom: .5cm; padding-left: .3cm; border-left: 3pt solid #dbeafe; }
+    .tl-period { display: inline-block; background: #dbeafe; color: #1d4ed8; font-size: 8pt; font-weight: 600; padding: 1pt 5pt; font-family: monospace; margin-bottom: .1cm; }
+    .tl-title { font-weight: 700; font-size: 10.5pt; display: block; margin-bottom: .2cm; }
+    .tl-body ul { margin: 0; padding-left: 1.2em; }
+    .tl-body li { font-size: 9pt; margin: .1cm 0; color: #475569; }
+    .org-note { background: #f8fafc; border: 1pt dashed #cbd5e1; padding: .4cm; text-align: center; color: #64748b; font-style: italic; font-size: 9pt; margin: .4em 0; }
   </style>
 </head>
 <body>

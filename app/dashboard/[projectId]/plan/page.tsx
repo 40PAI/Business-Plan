@@ -470,10 +470,22 @@ export default function PlanViewer() {
   if (raw.startsWith("__MARKDOWN__\n")) {
     markdownContent = raw.slice("__MARKDOWN__\n".length);
   } else if (raw) {
+    // Try progressively harder to extract valid JSON
+    let jsonStr = raw.trim();
+    // Strip markdown fences the model might have accidentally included
+    jsonStr = jsonStr.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
+    // If there's leading text before the JSON object, skip it
+    if (!jsonStr.startsWith("{")) {
+      const match = jsonStr.match(/\{[\s\S]*\}/);
+      if (match) jsonStr = match[0];
+    }
     try {
-      const parsed = JSON.parse(raw);
-      if (isBusinessPlanData(parsed)) planData = parsed;
-    } catch { /* old markdown */ }
+      const parsed = JSON.parse(jsonStr);
+      // Use a permissive check — any object with cover + sections qualifies
+      if (parsed && typeof parsed === "object" && "cover" in parsed && Array.isArray((parsed as BusinessPlanData).sections)) {
+        planData = parsed as BusinessPlanData;
+      }
+    } catch { /* treat as markdown */ }
   }
 
   const handleExportPDF = useCallback(async () => {
