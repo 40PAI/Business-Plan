@@ -1,12 +1,10 @@
-const OPENROUTER_MODEL = "anthropic/claude-3.5-sonnet";
-
 // --- OpenRouter ---
-async function makeOpenRouterRequest(body: Record<string, unknown>) {
+async function makeOpenRouterRequest(body: Record<string, unknown>, timeoutMs = 90000) {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error("OPENROUTER_API_KEY não configurada");
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 300000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -193,7 +191,7 @@ export async function streamOpenRouter(
         stream: true,
         max_tokens: Math.min(maxTokens, 8192),
         temperature: 0.7,
-      });
+      }, 90000); // 90s — streaming starts immediately, fail fast if no response
       return createSSEStream(response);
     } catch (e1) {
       console.warn(`OpenRouter stream failed for ${model}:`, (e1 as Error).message);
@@ -276,7 +274,7 @@ export async function callOpenRouter(
         messages,
         max_tokens: Math.min(maxTokens, 16000),
         temperature: 0.8,
-      });
+      }, 180000); // 180s — blocking call waits for full response before returning
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content;
       if (content) return content;
