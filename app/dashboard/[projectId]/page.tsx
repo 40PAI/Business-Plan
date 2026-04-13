@@ -322,14 +322,12 @@ export default function ProjectPage() {
         pitch: proj.artifacts.pitch.content || null,
       };
 
-      await fetch(
-        "https://automacoes.plenuz.co.ao/webhook/b09ca47f-521e-411b-86d4-f97909a8cf17",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      // Call via server-side proxy to avoid CORS restrictions
+      await fetch("/api/webhook/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       proj.webhookSent = true;
       updateProject(proj);
