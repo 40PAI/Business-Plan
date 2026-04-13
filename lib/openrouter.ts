@@ -171,16 +171,16 @@ export async function streamOpenRouter(
     { role: "user", content: userPrompt },
   ];
 
-  // Best models ordered by quality — all require a funded OpenRouter key
+  // Ordered by speed + reliability for streaming — fast models first
   const orModels = [
-    "anthropic/claude-sonnet-4-5",          // Best: Claude Sonnet 4.5 (latest)
-    "anthropic/claude-3.7-sonnet",           // Claude 3.7 Sonnet — strong reasoning
+    "google/gemini-2.0-flash-001",           // Fastest: cheap, reliable, great JSON
+    "anthropic/claude-3.5-haiku",            // Fast Claude — affordable
+    "meta-llama/llama-3.3-70b-instruct",     // Fast open-source
     "anthropic/claude-3.5-sonnet-20241022",  // Claude 3.5 Sonnet (stable)
-    "google/gemini-2.5-pro-preview",         // Gemini 2.5 Pro — excellent for long docs
-    "google/gemini-2.0-flash-001",           // Gemini 2.0 Flash — fast & capable
-    "anthropic/claude-3.5-haiku",            // Fast + affordable Haiku
-    "meta-llama/llama-3.3-70b-instruct",     // Strong open-source fallback
-    "meta-llama/llama-3.1-8b-instruct:free", // Free-tier last resort
+    "anthropic/claude-3.7-sonnet",           // Claude 3.7 Sonnet — strong reasoning
+    "google/gemini-2.5-pro-preview",         // Gemini 2.5 Pro — slower but thorough
+    "anthropic/claude-sonnet-4-5",           // Claude Sonnet 4.5 — last resort (can be slow)
+    "meta-llama/llama-3.1-8b-instruct:free", // Free-tier fallback
   ];
 
   for (const model of orModels) {
@@ -255,15 +255,16 @@ export async function callOpenRouter(
     { role: "user", content: userPrompt },
   ];
 
+  // Ordered by speed + reliability for blocking calls — fast models first
   const orModels = [
-    "anthropic/claude-sonnet-4-5",          // Best: Claude Sonnet 4.5 (latest)
-    "anthropic/claude-3.7-sonnet",           // Claude 3.7 Sonnet — strong reasoning
+    "google/gemini-2.0-flash-001",           // Fastest: cheap, reliable, great JSON
+    "anthropic/claude-3.5-haiku",            // Fast Claude — affordable
+    "meta-llama/llama-3.3-70b-instruct",     // Fast open-source
     "anthropic/claude-3.5-sonnet-20241022",  // Claude 3.5 Sonnet (stable)
-    "google/gemini-2.5-pro-preview",         // Gemini 2.5 Pro — excellent for long docs
-    "google/gemini-2.0-flash-001",           // Gemini 2.0 Flash — fast & capable
-    "anthropic/claude-3.5-haiku",            // Fast + affordable Haiku
-    "meta-llama/llama-3.3-70b-instruct",     // Strong open-source fallback
-    "meta-llama/llama-3.1-8b-instruct:free", // Free-tier last resort
+    "anthropic/claude-3.7-sonnet",           // Claude 3.7 Sonnet — strong reasoning
+    "google/gemini-2.5-pro-preview",         // Gemini 2.5 Pro — slower but thorough
+    "anthropic/claude-sonnet-4-5",           // Claude Sonnet 4.5 — last resort (can be slow)
+    "meta-llama/llama-3.1-8b-instruct:free", // Free-tier fallback
   ];
 
   // Try models via OpenRouter sequentially
