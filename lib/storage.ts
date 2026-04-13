@@ -2,6 +2,19 @@ import { supabase } from "./supabase";
 import type { Project, ArtifactState } from "./types";
 
 function mapFromDB(row: any): Project {
+  const artifacts = row.artifacts ?? { plan: { status: "pending" }, logo: { status: "pending" }, pitch: { status: "pending" } };
+
+  // Restore dedicated URL columns into artifact state (source of truth for display)
+  if (row.logo_url && !artifacts.logo?.urls?.includes(row.logo_url)) {
+    artifacts.logo = { ...artifacts.logo, urls: [row.logo_url, ...(artifacts.logo?.urls ?? [])].filter((v: string, i: number, a: string[]) => a.indexOf(v) === i) };
+  }
+  if (row.plan_doc_url) {
+    artifacts.plan = { ...artifacts.plan, fileUrl: row.plan_doc_url };
+  }
+  if (row.pitch_url) {
+    artifacts.pitch = { ...artifacts.pitch, fileUrl: row.pitch_url };
+  }
+
   return {
     id: row.id,
     createdAt: row.created_at,
@@ -11,7 +24,7 @@ function mapFromDB(row: any): Project {
     businessGoal: row.business_goal,
     contact: row.contact,
     answers: row.answers,
-    artifacts: row.artifacts,
+    artifacts,
     webhookSent: row.webhook_sent,
   };
 }
@@ -28,6 +41,10 @@ function mapToDB(p: Project) {
     artifacts: p.artifacts,
     webhook_sent: p.webhookSent,
     created_at: p.createdAt,
+    // Dedicated URL columns — visible as plain columns in the Supabase table
+    logo_url: p.artifacts.logo.urls?.[0] ?? null,
+    plan_doc_url: p.artifacts.plan.fileUrl ?? null,
+    pitch_url: p.artifacts.pitch.fileUrl ?? null,
   };
 }
 

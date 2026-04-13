@@ -166,6 +166,25 @@ export default function ProjectPage() {
 
       proj.artifacts.plan = { status: "done", content };
       updateProject(proj);
+
+      // Auto-upload plan as DOC to Supabase Storage
+      try {
+        const { getPlanDOCBlob } = await import("@/lib/pdf");
+        let planData = null;
+        try { planData = JSON.parse(content); } catch { /* markdown fallback */ }
+        const docBlob = getPlanDOCBlob(proj.businessName, planData || content);
+        const fd = new FormData();
+        fd.append("projectId", proj.id);
+        fd.append("file", docBlob, `${proj.businessName.replace(/\s+/g, "_")}_Plan.doc`);
+        const up = await fetch("/api/upload/document", { method: "POST", body: fd });
+        if (up.ok) {
+          const { publicUrl } = await up.json();
+          proj.artifacts.plan.fileUrl = publicUrl;
+          updateProject(proj);
+        }
+      } catch (upErr) {
+        console.warn("Auto-upload plan DOC failed (non-fatal):", upErr);
+      }
     } catch (error) {
       proj.artifacts.plan = {
         status: "error",
@@ -254,11 +273,25 @@ export default function ProjectPage() {
         }
       }
 
-      proj.artifacts.pitch = {
-        status: "done",
-        content: Array.isArray(slides) ? JSON.stringify(slides) : fullContent,
-      };
+      const pitchContent = Array.isArray(slides) ? JSON.stringify(slides) : fullContent;
+      proj.artifacts.pitch = { status: "done", content: pitchContent };
       updateProject(proj);
+
+      // Auto-upload pitch JSON to Supabase Storage
+      try {
+        const pitchBlob = new Blob([pitchContent], { type: "application/json" });
+        const fd = new FormData();
+        fd.append("projectId", proj.id);
+        fd.append("file", pitchBlob, `${proj.businessName.replace(/\s+/g, "_")}_Pitch.json`);
+        const up = await fetch("/api/upload/document", { method: "POST", body: fd });
+        if (up.ok) {
+          const { publicUrl } = await up.json();
+          proj.artifacts.pitch.fileUrl = publicUrl;
+          updateProject(proj);
+        }
+      } catch (upErr) {
+        console.warn("Auto-upload pitch failed (non-fatal):", upErr);
+      }
     } catch (error) {
       proj.artifacts.pitch = {
         status: "error",
