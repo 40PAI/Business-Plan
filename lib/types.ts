@@ -82,7 +82,8 @@ export type StepAnswer =
 export interface ArtifactState {
   status: "pending" | "generating" | "done" | "error";
   content?: string;
-  fileUrl?: string;  // Public URL of the file stored in Supabase Storage
+  fileUrl?: string;  // DOC/JSON file URL in Supabase Storage
+  htmlUrl?: string;  // Standalone HTML file URL in Supabase Storage
   urls?: string[];   // Logo variants
   error?: string;
 }

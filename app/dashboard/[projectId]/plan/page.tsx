@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Download, Loader2, Printer } from "lucide-react";
+import { ArrowLeft, Download, Loader2, Printer, FileCode } from "lucide-react";
 import { getProject } from "@/lib/storage";
 import type { Project } from "@/lib/types";
 import type {
@@ -449,6 +449,7 @@ export default function PlanViewer() {
   const [project, setProject] = useState<Project | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportingDoc, setExportingDoc] = useState(false);
+  const [exportingHtml, setExportingHtml] = useState(false);
 
   useEffect(() => {
     async function loadProject() {
@@ -513,6 +514,18 @@ export default function PlanViewer() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project, exportingDoc, planData, markdownContent]);
 
+  const handleExportHTML = useCallback(async () => {
+    if (!project || exportingHtml) return;
+    setExportingHtml(true);
+    try {
+      const { downloadPlanHTML } = await import("@/lib/html-export");
+      downloadPlanHTML(project.businessName, planData || markdownContent);
+    } finally {
+      setExportingHtml(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project, exportingHtml, planData, markdownContent]);
+
   // Early return AFTER all hooks
   if (isLoading) {
     return (
@@ -557,6 +570,15 @@ export default function PlanViewer() {
               {exporting ? <Loader2 size={14} className="animate-spin" /> : <Printer size={14} />}
               <span className="hidden sm:inline">{exporting ? "A abrir..." : "PDF"}</span>
               <span className="sm:hidden">PDF</span>
+            </button>
+            <button
+              onClick={handleExportHTML}
+              disabled={exportingHtml || !raw}
+              className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 sm:px-4 text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {exportingHtml ? <Loader2 size={14} className="animate-spin" /> : <FileCode size={14} />}
+              <span className="hidden sm:inline">{exportingHtml ? "A exportar..." : "HTML"}</span>
+              <span className="sm:hidden">HTML</span>
             </button>
           </div>
         </div>

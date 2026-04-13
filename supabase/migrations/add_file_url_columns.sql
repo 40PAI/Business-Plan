@@ -2,9 +2,10 @@
 -- Run this in the Supabase SQL Editor (Dashboard > SQL Editor)
 
 ALTER TABLE projects
-  ADD COLUMN IF NOT EXISTS logo_url     TEXT DEFAULT NULL,
-  ADD COLUMN IF NOT EXISTS plan_doc_url TEXT DEFAULT NULL,
-  ADD COLUMN IF NOT EXISTS pitch_url    TEXT DEFAULT NULL;
+  ADD COLUMN IF NOT EXISTS logo_url      TEXT DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS plan_doc_url  TEXT DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS plan_html_url TEXT DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS pitch_url     TEXT DEFAULT NULL;
 
 -- Backfill logo_url from existing artifacts JSONB for projects already generated
 UPDATE projects

@@ -11,6 +11,9 @@ function mapFromDB(row: any): Project {
   if (row.plan_doc_url) {
     artifacts.plan = { ...artifacts.plan, fileUrl: row.plan_doc_url };
   }
+  if (row.plan_html_url) {
+    artifacts.plan = { ...artifacts.plan, htmlUrl: row.plan_html_url };
+  }
   if (row.pitch_url) {
     artifacts.pitch = { ...artifacts.pitch, fileUrl: row.pitch_url };
   }
@@ -44,6 +47,7 @@ function mapToDB(p: Project) {
     // Dedicated URL columns — visible as plain columns in the Supabase table
     logo_url: p.artifacts.logo.urls?.[0] ?? null,
     plan_doc_url: p.artifacts.plan.fileUrl ?? null,
+    plan_html_url: p.artifacts.plan.htmlUrl ?? null,
     pitch_url: p.artifacts.pitch.fileUrl ?? null,
   };
 }

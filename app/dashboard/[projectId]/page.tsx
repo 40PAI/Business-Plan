@@ -167,23 +167,41 @@ export default function ProjectPage() {
       proj.artifacts.plan = { status: "done", content };
       updateProject(proj);
 
-      // Auto-upload plan as DOC to Supabase Storage
+      // Parse plan data once for both uploads
+      let planData = null;
+      try { planData = JSON.parse(content); } catch { /* markdown fallback */ }
+      const safeName = proj.businessName.replace(/\s+/g, "_");
+
+      // Auto-upload plan as DOC
       try {
         const { getPlanDOCBlob } = await import("@/lib/pdf");
-        let planData = null;
-        try { planData = JSON.parse(content); } catch { /* markdown fallback */ }
         const docBlob = getPlanDOCBlob(proj.businessName, planData || content);
         const fd = new FormData();
         fd.append("projectId", proj.id);
-        fd.append("file", docBlob, `${proj.businessName.replace(/\s+/g, "_")}_Plan.doc`);
+        fd.append("file", docBlob, `${safeName}_Plan.doc`);
         const up = await fetch("/api/upload/document", { method: "POST", body: fd });
         if (up.ok) {
-          const { publicUrl } = await up.json();
-          proj.artifacts.plan.fileUrl = publicUrl;
+          proj.artifacts.plan.fileUrl = (await up.json()).publicUrl;
           updateProject(proj);
         }
       } catch (upErr) {
         console.warn("Auto-upload plan DOC failed (non-fatal):", upErr);
+      }
+
+      // Auto-upload plan as standalone HTML
+      try {
+        const { getPlanHTMLBlob } = await import("@/lib/html-export");
+        const htmlBlob = getPlanHTMLBlob(proj.businessName, planData || content);
+        const fd = new FormData();
+        fd.append("projectId", proj.id);
+        fd.append("file", htmlBlob, `${safeName}_Plan.html`);
+        const up = await fetch("/api/upload/document", { method: "POST", body: fd });
+        if (up.ok) {
+          proj.artifacts.plan.htmlUrl = (await up.json()).publicUrl;
+          updateProject(proj);
+        }
+      } catch (upErr) {
+        console.warn("Auto-upload plan HTML failed (non-fatal):", upErr);
       }
     } catch (error) {
       proj.artifacts.plan = {
@@ -317,6 +335,7 @@ export default function ProjectPage() {
         // File URLs — direct links to files in Supabase Storage
         logoUrl: proj.artifacts.logo.urls?.[0] || null,
         planDocUrl: proj.artifacts.plan.fileUrl || null,
+        planHtmlUrl: proj.artifacts.plan.htmlUrl || null,
         pitchUrl: proj.artifacts.pitch.fileUrl || null,
         // Raw content (for n8n processing if needed)
         plan: proj.artifacts.plan.content || null,
