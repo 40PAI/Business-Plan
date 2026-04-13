@@ -223,10 +223,15 @@ export default function PlanWizard() {
     try {
       const projectId = nanoid(10);
 
-      // Extract contact info from step 13 (was 14)
-      const contactAnswer = answers[13] as { countryCode: string; whatsapp: string; email: string } | undefined;
+      // Extract contact info from step 13
+      const contactAnswer = answers[13] as { countryCode: string; whatsapp: string; email: string; deliveryPreference?: "whatsapp" | "email" | "both" } | undefined;
       const contact = contactAnswer
-        ? { countryCode: contactAnswer.countryCode, whatsapp: contactAnswer.whatsapp, email: contactAnswer.email }
+        ? {
+            countryCode: contactAnswer.countryCode,
+            whatsapp: contactAnswer.whatsapp,
+            email: contactAnswer.email,
+            deliveryPreference: contactAnswer.deliveryPreference ?? "both",
+          }
         : undefined;
 
       const project: Project = {

@@ -76,6 +76,7 @@ export type StepAnswer =
       countryCode: string;
       whatsapp: string;
       email: string;
+      deliveryPreference?: "whatsapp" | "email" | "both";
     };
 
 export interface ArtifactState {
@@ -90,6 +91,7 @@ export interface ProjectContact {
   countryCode: string;
   whatsapp: string;
   email: string;
+  deliveryPreference?: "whatsapp" | "email" | "both";
 }
 
 export interface Project {

@@ -313,6 +313,7 @@ export default function ProjectPage() {
         businessPhase: proj.businessPhase,
         businessGoal: proj.businessGoal,
         contact: proj.contact || null,
+        deliveryPreference: proj.contact?.deliveryPreference ?? "both",
         // File URLs — direct links to files in Supabase Storage
         logoUrl: proj.artifacts.logo.urls?.[0] || null,
         planDocUrl: proj.artifacts.plan.fileUrl || null,
