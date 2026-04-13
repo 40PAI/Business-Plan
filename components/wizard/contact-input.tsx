@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Phone, Mail, ChevronDown, MessageCircle, Send } from "lucide-react";
+import { Phone, Mail, ChevronDown } from "lucide-react";
 
 const COUNTRY_CODES = [
   { code: "+244", country: "Angola", flag: "🇦🇴" },
@@ -20,16 +20,13 @@ const COUNTRY_CODES = [
   { code: "+234", country: "Nigéria", flag: "🇳🇬" },
 ];
 
-type DeliveryPreference = "whatsapp" | "email" | "both";
-
 interface ContactInputProps {
   value: {
     countryCode: string;
     whatsapp: string;
     email: string;
-    deliveryPreference?: DeliveryPreference;
   };
-  onChange: (value: { countryCode: string; whatsapp: string; email: string; deliveryPreference?: DeliveryPreference }) => void;
+  onChange: (value: { countryCode: string; whatsapp: string; email: string }) => void;
 }
 
 export function ContactInput({ value, onChange }: ContactInputProps) {
@@ -124,38 +121,6 @@ export function ContactInput({ value, onChange }: ContactInputProps) {
           value={value.email}
           onChange={(e) => handleEmailChange(e.target.value)}
         />
-      </div>
-
-      {/* Delivery preference */}
-      <div>
-        <label className="flex items-center gap-2 text-sm font-medium text-foreground/80 mb-3">
-          <Send size={16} className="text-accent-foreground" />
-          Como prefere receber os documentos?
-        </label>
-        <div className="grid grid-cols-3 gap-2">
-          {([
-            { key: "whatsapp", icon: <MessageCircle size={16} className="text-green-500" />, label: "WhatsApp" },
-            { key: "email",    icon: <Mail size={16} className="text-accent-foreground" />,  label: "Email" },
-            { key: "both",     icon: <Send size={16} className="text-primary" />,            label: "Ambos" },
-          ] as { key: DeliveryPreference; icon: React.ReactNode; label: string }[]).map(({ key, icon, label }) => {
-            const active = (value.deliveryPreference ?? "both") === key;
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => onChange({ ...value, deliveryPreference: key })}
-                className={`flex flex-col items-center gap-1.5 rounded-xl border px-3 py-3 text-xs font-medium transition-all
-                  ${active
-                    ? "border-accent-foreground/50 bg-accent-foreground/10 text-foreground"
-                    : "border-border text-muted-foreground hover:border-accent-foreground/30"
-                  }`}
-              >
-                {icon}
-                {label}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {/* Helper text */}

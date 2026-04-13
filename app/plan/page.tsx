@@ -223,14 +223,17 @@ export default function PlanWizard() {
     try {
       const projectId = nanoid(10);
 
-      // Extract contact info from step 13
-      const contactAnswer = answers[13] as { countryCode: string; whatsapp: string; email: string; deliveryPreference?: "whatsapp" | "email" | "both" } | undefined;
+      // Extract contact info from step 13 — infer delivery preference from filled fields
+      const contactAnswer = answers[13] as { countryCode: string; whatsapp: string; email: string } | undefined;
+      const hasWhatsapp = (contactAnswer?.whatsapp?.length ?? 0) >= 6;
+      const hasEmail = !!contactAnswer?.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactAnswer.email);
+      const deliveryPreference = hasWhatsapp && hasEmail ? "both" : hasWhatsapp ? "whatsapp" : "email";
       const contact = contactAnswer
         ? {
             countryCode: contactAnswer.countryCode,
             whatsapp: contactAnswer.whatsapp,
             email: contactAnswer.email,
-            deliveryPreference: contactAnswer.deliveryPreference ?? "both",
+            deliveryPreference,
           }
         : undefined;
 
