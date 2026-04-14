@@ -8,6 +8,7 @@ import { useGSAP } from "@gsap/react";
 import { ArrowLeft, FileText, Palette, Presentation, Sparkles, AlertCircle, RefreshCw } from "lucide-react";
 
 import { getProject, saveProject } from "@/lib/storage";
+import { parseBusinessPlan } from "@/lib/utils";
 import type { Project } from "@/lib/types";
 import { ArtifactCard } from "@/components/dashboard/artifact-card";
 
@@ -167,9 +168,8 @@ export default function ProjectPage() {
       proj.artifacts.plan = { status: "done", content };
       updateProject(proj);
 
-      // Parse plan data once for both uploads
-      let planData = null;
-      try { planData = JSON.parse(content); } catch { /* markdown fallback */ }
+      // Parse plan data once for both uploads — robust parser handles __MARKDOWN__ prefix + fences
+      const planData = parseBusinessPlan(content);
       const safeName = proj.businessName.replace(/\s+/g, "_");
 
       // Auto-upload plan as DOC

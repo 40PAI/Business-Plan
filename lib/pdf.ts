@@ -1,4 +1,5 @@
 import type { BusinessPlanData, PlanBlock } from "./plan-schema";
+import { parseBusinessPlan } from "./utils";
 
 // --- Markdown to HTML ---
 
@@ -151,7 +152,8 @@ export function planToHtml(plan: BusinessPlanData): string {
 // --- Business Plan PDF (via window.print) ---
 
 export function generatePlanPDF(businessName: string, content: string | BusinessPlanData) {
-  const body = typeof content === "string" ? markdownToHtml(content) : planToHtml(content);
+  const resolved = typeof content === "string" ? (parseBusinessPlan(content) ?? content) : content;
+  const body = typeof resolved === "string" ? markdownToHtml(resolved) : planToHtml(resolved);
   const html = `<!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -329,7 +331,8 @@ export function generatePitchPDF(businessName: string, slides: Slide[]) {
 // --- Business Plan DOC (Word-compatible HTML with UTF-8 BOM) ---
 
 export function getPlanDOCBlob(businessName: string, content: string | BusinessPlanData): Blob {
-  const body = typeof content === "string" ? markdownToHtml(content) : planToHtml(content);
+  const resolved = typeof content === "string" ? (parseBusinessPlan(content) ?? content) : content;
+  const body = typeof resolved === "string" ? markdownToHtml(resolved) : planToHtml(resolved);
   const docHtml = `<!DOCTYPE html>
 <html xmlns:o='urn:schemas-microsoft-com:office:office'
       xmlns:w='urn:schemas-microsoft-com:office:word'

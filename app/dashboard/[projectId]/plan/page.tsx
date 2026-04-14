@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Download, Loader2, Printer, FileCode } from "lucide-react";
 import { getProject } from "@/lib/storage";
+import { parseBusinessPlan } from "@/lib/utils";
 import type { Project } from "@/lib/types";
 import type {
   BusinessPlanData,
@@ -12,7 +13,6 @@ import type {
   PlanSubsection,
   OrgNode,
 } from "@/lib/plan-schema";
-import { isBusinessPlanData } from "@/lib/plan-schema";
 import { planToHtml, getPlanDOCBlob } from "@/lib/pdf";
 
 // ─── Block renderers ────────────────────────────────────────────────────
@@ -464,38 +464,10 @@ export default function PlanViewer() {
 
   // Derive plan data — must be computed before any hook (no early return before hooks)
   const raw = project?.artifacts.plan.content || "";
-
-  function tryParseJSON(str: string): BusinessPlanData | null {
-    let s = str.trim();
-    s = s.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
-    if (!s.startsWith("{")) {
-      const m = s.match(/\{[\s\S]*\}/);
-      if (m) s = m[0];
-    }
-    try {
-      const parsed = JSON.parse(s);
-      if (parsed && typeof parsed === "object" && "cover" in parsed && Array.isArray((parsed as BusinessPlanData).sections)) {
-        console.log("[plan-viewer] JSON detected, sections:", (parsed as BusinessPlanData).sections.length);
-        return parsed as BusinessPlanData;
-      }
-      console.warn("[plan-viewer] Parsed JSON but missing cover/sections. Keys:", Object.keys(parsed));
-    } catch (e) {
-      console.warn("[plan-viewer] JSON.parse failed. First 200 chars:", s.slice(0, 200), "Error:", e);
-    }
-    return null;
-  }
-
-  let planData: BusinessPlanData | null = null;
-  let markdownContent = raw;
-  console.log("[plan-viewer] raw length:", raw.length, "| prefix:", raw.slice(0, 30));
-  if (raw.startsWith("__MARKDOWN__\n")) {
-    const afterPrefix = raw.slice("__MARKDOWN__\n".length);
-    // The model might have emitted valid JSON that failed a parse check at save time — retry
-    planData = tryParseJSON(afterPrefix);
-    markdownContent = afterPrefix;
-  } else if (raw) {
-    planData = tryParseJSON(raw);
-  }
+  const planData: BusinessPlanData | null = parseBusinessPlan(raw);
+  const markdownContent = raw.startsWith("__MARKDOWN__\n")
+    ? raw.slice("__MARKDOWN__\n".length)
+    : raw;
 
   const handleExportPDF = useCallback(async () => {
     if (!project || exporting) return;

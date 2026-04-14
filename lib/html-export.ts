@@ -1,4 +1,5 @@
 import type { BusinessPlanData, PlanBlock, OrgNode } from "./plan-schema";
+import { parseBusinessPlan } from "./utils";
 
 // ─── Org tree renderer ───────────────────────────────────────────────────────
 
@@ -118,10 +119,14 @@ export function downloadPlanHTML(businessName: string, content: string | Busines
 
 function buildPlanHTML(businessName: string, content: string | BusinessPlanData): string {
   if (typeof content === "string") {
-    // Markdown fallback — wrap in minimal styled container
+    // Attempt to recover a structured plan from the raw string before falling back to text
+    const recovered = parseBusinessPlan(content);
+    if (recovered) return buildPlanHTML(businessName, recovered);
+    // Plain-text fallback — strip __MARKDOWN__ prefix if present
+    const text = content.startsWith("__MARKDOWN__\n") ? content.slice("__MARKDOWN__\n".length) : content;
     return `<!DOCTYPE html><html lang="pt"><head><meta charset="utf-8"/><title>${businessName} — Business Plan</title>
     <style>body{font-family:system-ui,sans-serif;max-width:900px;margin:2rem auto;padding:2rem;color:#1e293b;line-height:1.6}h1,h2,h3{color:#1e3a8a}table{width:100%;border-collapse:collapse;margin:1em 0}th{background:#1e3a8a;color:#fff;padding:8px 12px;text-align:left}td{padding:7px 12px;border-bottom:1px solid #e2e8f0}tr:nth-child(even) td{background:#f8fafc}</style>
-    </head><body><h1>${businessName} — Business Plan</h1><hr/><pre style="white-space:pre-wrap">${content}</pre></body></html>`;
+    </head><body><h1>${businessName} — Business Plan</h1><hr/><pre style="white-space:pre-wrap">${text}</pre></body></html>`;
   }
 
   const plan = content;
