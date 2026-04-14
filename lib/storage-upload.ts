@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { nanoid } from "nanoid";
+import { sanitizeStorageKey } from "./utils";
 
 /**
  * Uploads a logo buffer to Supabase Storage and returns the public URL.
@@ -46,7 +47,9 @@ export async function uploadDocument(
   buffer: Buffer | ArrayBuffer,
   contentType: string = "application/pdf"
 ): Promise<string> {
-  const filePath = `${projectId}/${fileName}`;
+  // Supabase Storage rejects keys with accented/special characters
+  const safeFileName = sanitizeStorageKey(fileName);
+  const filePath = `${projectId}/${safeFileName}`;
 
   const { error } = await supabase.storage
     .from("documents")

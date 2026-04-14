@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Download, Loader2, Printer, FileCode } from "lucide-react";
 import { getProject } from "@/lib/storage";
-import { parseBusinessPlan } from "@/lib/utils";
+import { parseBusinessPlan, sanitizeStorageKey } from "@/lib/utils";
 import type { Project } from "@/lib/types";
 import type {
   BusinessPlanData,
@@ -494,7 +494,7 @@ export default function PlanViewer() {
       const docBlob = getPlanDOCBlob(project.businessName, planData || markdownContent);
       const formData = new FormData();
       formData.append("projectId", project.id);
-      formData.append("file", docBlob, `${project.businessName.replace(/\s+/g, "_")}_Plan.doc`);
+      formData.append("file", docBlob, `${sanitizeStorageKey(project.businessName)}_Plan.doc`);
 
       await fetch("/api/upload/document", {
         method: "POST",

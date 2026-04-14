@@ -8,7 +8,7 @@ import { useGSAP } from "@gsap/react";
 import { ArrowLeft, FileText, Palette, Presentation, Sparkles, AlertCircle, RefreshCw } from "lucide-react";
 
 import { getProject, saveProject } from "@/lib/storage";
-import { parseBusinessPlan } from "@/lib/utils";
+import { parseBusinessPlan, sanitizeStorageKey } from "@/lib/utils";
 import type { Project } from "@/lib/types";
 import { ArtifactCard } from "@/components/dashboard/artifact-card";
 
@@ -170,7 +170,7 @@ export default function ProjectPage() {
 
       // Parse plan data once for both uploads — robust parser handles __MARKDOWN__ prefix + fences
       const planData = parseBusinessPlan(content);
-      const safeName = proj.businessName.replace(/\s+/g, "_");
+      const safeName = sanitizeStorageKey(proj.businessName);
 
       // Auto-upload plan as DOC
       try {
@@ -426,18 +426,18 @@ export default function ProjectPage() {
   const rawPlanContent = project.artifacts.plan.content || "";
   let planPreview: string | undefined;
   if (rawPlanContent) {
-    if (rawPlanContent.startsWith("__MARKDOWN__\n")) {
-      planPreview = rawPlanContent.slice("__MARKDOWN__\n".length).replace(/^#+\s*/gm, "").replace(/\*\*/g, "").slice(0, 150);
+    const parsedPlan = parseBusinessPlan(rawPlanContent);
+    if (parsedPlan) {
+      const firstSection = parsedPlan.sections?.[0];
+      const firstTextBlock = firstSection?.blocks?.find((b: { type: string }) => b.type === "text");
+      planPreview = (firstTextBlock as { type: "text"; content: string } | undefined)?.content?.slice(0, 150)
+        ?? parsedPlan.cover?.tagline?.slice(0, 150);
     } else {
-      try {
-        const parsed = JSON.parse(rawPlanContent);
-        // Extract first text block from first section for preview
-        const firstSection = parsed.sections?.[0];
-        const firstTextBlock = firstSection?.blocks?.find((b: { type: string }) => b.type === "text");
-        planPreview = firstTextBlock?.content?.slice(0, 150) ?? parsed.cover?.tagline?.slice(0, 150);
-      } catch {
-        planPreview = rawPlanContent.slice(0, 150);
-      }
+      // Markdown fallback — strip prefix and formatting markers
+      const md = rawPlanContent.startsWith("__MARKDOWN__\n")
+        ? rawPlanContent.slice("__MARKDOWN__\n".length)
+        : rawPlanContent;
+      planPreview = md.replace(/^#+\s*/gm, "").replace(/\*\*/g, "").slice(0, 150);
     }
   }
 
