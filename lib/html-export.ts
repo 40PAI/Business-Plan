@@ -104,7 +104,9 @@ function renderBlock(block: PlanBlock): string {
 
 export function getPlanHTMLBlob(businessName: string, content: string | BusinessPlanData): Blob {
   const html = buildPlanHTML(businessName, content);
-  return new Blob([html], { type: "text/html;charset=utf-8" });
+  // Use TextEncoder to guarantee UTF-8 bytes — avoids garbled accented characters on download
+  const bytes = new TextEncoder().encode(html);
+  return new Blob([bytes], { type: "text/html;charset=utf-8" });
 }
 
 export function downloadPlanHTML(businessName: string, content: string | BusinessPlanData) {
